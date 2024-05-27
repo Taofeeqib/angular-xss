@@ -1,0 +1,11 @@
+<h1>Movies Available</h1>
+<table>
+    <tr>
+        <td>Movie Name</td>
+        <td>Link</td>
+    </tr>
+    <tr *ngFor="let movie of myDataArray">
+        <td>{{movie.name}}</td>
+        <td [innerHtml] = "getMovieLink(movie.link)"></td>
+    </tr>
+</table>

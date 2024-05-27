@@ -1,0 +1,10 @@
+<mat-toolbar >
+    <span>JobHunt</span>
+    <div class="right">
+      <span><a routerLink="/user/professionals"><button mat-button style="margin-right:15px;">Find Professionals</button></a></span>
+      <span><a routerLink="/user"><button mat-button style="margin-right:15px;">Edit</button></a></span>
+      <span><button mat-button style="margin-right:15px;" (click)="logout()">Logout</button></span>
+    </div>
+  </mat-toolbar>
+  
+  <router-outlet></router-outlet>

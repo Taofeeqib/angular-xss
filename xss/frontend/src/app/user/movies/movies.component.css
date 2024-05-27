@@ -1,0 +1,20 @@
+table{
+    width: 80%;
+    margin: auto;
+    box-shadow: 0px 0px 10px 10px rgb(212, 212, 212);
+}
+th{
+    font-weight: normal;
+}
+td{
+    text-align: center;
+    padding: 10px;    
+    border-bottom: 1px solid rgb(160, 160, 160);
+}
+.link{
+    color: black;
+    text-decoration: none;
+    border: 1px solid black;
+    padding: 5px;
+    border-radius: 5px;
+}

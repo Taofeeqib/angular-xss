@@ -1,0 +1,12 @@
+<div class="box">
+  <h1>Update Profile</h1>
+  <mat-form-field appearance="fill">
+    <mat-label>Email</mat-label>
+    <input matInput [value]="useremail" #email type="email"/>
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Name</mat-label>
+    <input matInput [value]='username' #name type="text"/>
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="update(email.value, name.value)">Update</button>
+</div>

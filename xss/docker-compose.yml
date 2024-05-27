@@ -1,0 +1,25 @@
+version: '3' # specify docker-compose version
+
+# Define the services/containers to be run
+services:
+  angular-app:
+    build: frontend
+    ports:
+      - "4200:4200"
+    depends_on:
+      - api
+    links:
+      - database
+      - api
+  api: # name of the first service
+    build: api # specify the directory of the Dockerfile
+    ports:
+      - "8000:8000"
+    links:
+      - database
+    depends_on:
+      - database
+  database: # name of the third service
+    image: mongo # specify image to build container from    
+    ports:
+      - "27017:27017" # specify port forwarding

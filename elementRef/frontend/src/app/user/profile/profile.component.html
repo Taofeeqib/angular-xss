@@ -1,0 +1,28 @@
+<div class="box">
+  <h3>{{msg}}</h3>
+  <h1>Update Profile</h1>
+  <mat-form-field appearance="fill">
+    <mat-label>Email</mat-label>
+    <input matInput #email [defaultValue]="useremail" type="email" />
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Name</mat-label>
+    <input matInput #name [defaultValue]="username" type="text" />
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Website Url</mat-label>
+    <input matInput #url [defaultValue]="userurl" type="text" />
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Select</mat-label>
+    <mat-select #profession [(value)]="userprofession">
+      <mat-option value="Full Stack Developer">Full Stack Developer</mat-option>
+      <mat-option value="Frontend Developer">Frontend Developer</mat-option>
+      <mat-option value="Backend Developer">Backend Developer</mat-option>
+      <mat-option value="Android Developer">Android Developer</mat-option>
+      <mat-option value="IOS Developer">IOS Developer</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" (click)="update(email.value, name.value, url.value, profession.value)">Update</button>
+</div>

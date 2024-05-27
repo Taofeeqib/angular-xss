@@ -1,0 +1,19 @@
+<div class="box">
+  <h1>Add Movies</h1>
+  <h4>{{msg}}</h4>
+  <mat-form-field appearance="fill">
+    <mat-label>Movie Link</mat-label>
+    <input matInput #link type="email" />
+  </mat-form-field>
+  <mat-form-field appearance="fill">
+    <mat-label>Movie Name</mat-label>
+    <input matInput #name type="text" />
+  </mat-form-field>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="add(name.value, link.value)"
+  >
+    Add
+  </button>
+</div>

@@ -1,0 +1,82 @@
+<div class="heading">
+  <h1>Welcome</h1>
+</div>
+<div class="professionals-box">
+  <mat-tab-group>
+      <mat-tab label="Full Stack Developer" >
+      <h1>Full Stack Developer</h1>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>Email</td>
+          <td>Website Url</td>
+        </tr>
+        <tr *ngFor="let i of fullstack">
+          <td>{{i.name}}</td>
+          <td>{{i.email}}</td>
+          <td><a #fsurl style="color: black;">Website</a></td>
+        </tr>
+      </table>
+    </mat-tab>
+    <mat-tab label="Backend Developer">
+        <h1>Backend Developer</h1>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>Email</td>
+          <td>Website Url</td>
+        </tr>
+        <tr *ngFor="let i of backend">
+          <td>{{i.name}}</td>
+          <td>{{i.email}}</td>
+          <td><a #burl>Website</a></td>
+        </tr>
+      </table>    
+    </mat-tab>
+    <mat-tab label="Frontend Engineer">
+        <h1>Frontend Developer</h1>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>Email</td>
+          <td>Website Url</td>
+        </tr>
+        <tr *ngFor="let i of frontend">
+          <td>{{i.name}}</td>
+          <td>{{i.email}}</td>
+          <td><a #furl>Website</a></td>
+        </tr>
+      </table>
+    </mat-tab>
+    <mat-tab label="Android Developer">
+        <h1>Android Developer</h1>
+        <table>
+          <tr>
+            <td>Name</td>
+            <td>Email</td>
+            <td>Website Url</td>
+          </tr>
+          <tr *ngFor="let i of android">
+            <td>{{i.name}}</td>
+            <td>{{i.email}}</td>
+            <td><a #aurl style="color: black;">Website</a></td>
+          </tr>
+        </table>
+    </mat-tab>
+    <mat-tab label="IOS Developer" >
+        <h1>IOS Developer</h1>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>Email</td>
+          <td>Website Url</td>
+        </tr>
+        <tr *ngFor="let i of ios">
+          <td>{{i.name}}</td>
+          <td>{{i.email}}</td>
+          <td><a #iurl>Website</a></td>
+        </tr>
+      </table>
+    </mat-tab>
+  </mat-tab-group>
+</div>

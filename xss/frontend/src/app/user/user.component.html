@@ -1,0 +1,11 @@
+<mat-toolbar color="primary">
+  <span>Hello {{name}}</span>
+  <div class="right">
+    <span *ngIf="isAdmin"><a routerLink="/user/addmovie"><button mat-button style="margin-right:15px;">Add New Movies</button></a></span>
+    <span><a routerLink="/user"><button mat-button style="margin-right:15px;">Movies</button></a></span>
+    <span><a routerLink="/user/edit"><button mat-button style="margin-right:15px;">Edit</button></a></span>
+    <span><button mat-button style="margin-right:15px;" (click)="logout()">Logout</button></span>
+  </div>
+</mat-toolbar>
+
+<router-outlet></router-outlet>

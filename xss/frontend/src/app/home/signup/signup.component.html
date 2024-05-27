@@ -1,0 +1,18 @@
+<h3>{{msg}}</h3>
+
+<mat-form-field appearance="fill">
+    <mat-label>Email</mat-label>
+    <input matInput #email type="email">
+</mat-form-field>
+<mat-form-field appearance="fill">
+    <mat-label>Name</mat-label>
+    <input matInput #name type="text">
+</mat-form-field>
+<mat-form-field appearance="fill">
+    <mat-label>Password</mat-label>
+    <input matInput #password type="password">
+</mat-form-field>
+<div style="margin-bottom: 20px;">
+    <mat-checkbox #isAdmin class="example-margin">Signup as an admin</mat-checkbox>
+</div>
+<button mat-raised-button color="primary" (click)="signup(email.value, name.value, password.value, isAdmin.checked)">Signup</button>

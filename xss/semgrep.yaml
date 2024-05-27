@@ -1,0 +1,26 @@
+rules:
+- id: bypassSecurityTrustHtml
+  pattern: this.$X.bypassSecurityTrustHtml(...)
+  message: Semgrep found a match for bypassSecurityTrustHtml
+  languages: [ts]
+  severity: WARNING
+- id: bypassSecurityTrustScript
+  pattern: this.$X.bypassSecurityTrustScript(...)
+  message: Semgrep found a match for bypassSecurityTrustScript
+  languages: [ts]
+  severity: WARNING
+- id: bypassSecurityTrustStyle
+  pattern: this.$X.bypassSecurityTrustStyle(...)
+  message: Semgrep found a match for bypassSecurityTrustStyle
+  languages: [ts]
+  severity: WARNING
+- id: bypassSecurityTrustUrl
+  pattern: this.$X.bypassSecurityTrustUrl(...)
+  message: Semgrep found a match for bypassSecurityTrustUrl
+  languages: [ts]
+  severity: WARNING
+- id: bypassSecurityTrustResourceUrl
+  pattern: this.$X.bypassSecurityTrustResourceUrl(...)
+  message: Semgrep found a match for bypassSecurityTrustResourceUrl
+  languages: [ts]
+  severity: WARNING
