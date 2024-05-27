@@ -2,47 +2,46 @@
 
 ## Preqrequisites
 
-You must have docker on your local system<br/><br/>
+You must have docker on your local system
 
--   In terminal go to the root of this repository<br/><br/>
--   Type the following command into the terminal `docker build ./api -t api`<br/><br/>
--   Type the following command into the terminal `docker build ./frontend -t frontend`<br/><br/>
--   To start the dockerized application enter the following command into the terminal `docker-compose up`
-    <br/><br/>
+- In terminal go to the root of this repository
+- Type the following command into the terminal `docker build ./api -t api`
+- Type the following command into the terminal `docker build ./frontend -t frontend`
+- To start the dockerized application enter the following command into the terminal `docker-compose up`
 
--   The frontend application will be hosted on `http://localhost:4200/` and the backend will be hosted on `http://localhost:8000/`
+- The frontend application will be hosted on `http://localhost:4200/` and the backend will be hosted on `http://localhost:8000/`
 
-# Run the application on your local system
+## Run the application on your local system
 
 ## Prerequisites
 
-You must have node and mongodb installed.<br/><br/>
+You must have node and mongodb installed.
 
--   In terminal go to the root of this repository<br/><br/>
+- In terminal go to the root of this repository
 
--   In the terminal run the following commands
+- In the terminal run the following commands
 
-```
+``` bash
 cd api
 npm i
 node app.js
 ```
 
--   At the root level in the terminal run the following commands
+- At the root level in the terminal run the following commands
 
-```
+``` bash
 cd frontend
 npm i
 ng serve
 ```
 
--   The application will be hosted on `http://localhost:4200/` and the backend will be hosted on `http://localhost:8000`
+- The application will be hosted on `http://localhost:4200/` and the backend will be hosted on `http://localhost:8000`
 
-# API Requests
+## API Requests
 
--   To login
+- To login
 
-```
+``` http
 POST http://localhost:8000/signin
 
 {
@@ -51,9 +50,9 @@ POST http://localhost:8000/signin
 }
 ```
 
--   To Signup
+- To Signup
 
-```
+``` http
 POST http://localhost:8000/signup
 
 {
@@ -63,9 +62,9 @@ POST http://localhost:8000/signup
 }
 ```
 
--   To find professionals
+- To find professionals
 
-```
+``` http
 POST http://localhost:8000/find
 
 {
@@ -73,9 +72,9 @@ POST http://localhost:8000/find
 }
 ```
 
--   To update user info
+- To update user info
 
-```
+``` https
 POST http://localhost:8000/update
 {
     "token": String,
@@ -86,6 +85,6 @@ POST http://localhost:8000/update
 }
 ```
 
-# Vulnerable payload
+## Vulnerable payload
 
 In the `Update` section in the Url section put `javascript:alert(window.localStorage('token'))`. Now in the `Professionals` section, the link containing this user's website will be vulnerable.
