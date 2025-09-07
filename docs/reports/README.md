@@ -38,3 +38,6 @@ Markdown files (.md) can be viewed with any Markdown viewer or GitHub's web inte
 
 ## DefectDojo Integration
 These reports are automatically imported into DefectDojo for centralized vulnerability management.
+- **zap-reports**
+  - [README.md](./README.md)
+  - [report_md.md](./report_md.md)
