@@ -10,11 +10,7 @@ This directory contains documentation and security scan reports for the Angular 
   - OWASP Dependency-Check SCA results
   - CycloneDX SBOM
   - OWASP ZAP DAST scan reports
-  - A comprehensive README.md indexing all reports
 
-- **`setup-secrets.md`** - Instructions for setting up required secrets for DefectDojo integration
-- **`devsecops-summary.md`** - Overview of the DevSecOps implementation
-- **`usage-guide.md`** - Detailed guide on using the DevSecOps pipeline
 
 ## Reports Access
 
@@ -22,4 +18,3 @@ The `reports/` directory is automatically populated by the GitHub Actions workfl
 
 [https://github.com/Taofeeqib/angular-xss/tree/main/docs/reports](https://github.com/Taofeeqib/angular-xss/tree/main/docs/reports)
 
-For more information about the reports and how to interpret them, see the README.md file within the reports directory.
