@@ -8,7 +8,7 @@ ZAP by [Checkmarx](https://checkmarx.com/).
 | Risk Level | Number of Alerts |
 | --- | --- |
 | High | 0 |
-| Medium | 4 |
+| Medium | 5 |
 | Low | 5 |
 | Informational | 8 |
 
@@ -19,6 +19,7 @@ ZAP by [Checkmarx](https://checkmarx.com/).
 
 | Name | Risk Level | Number of Instances |
 | --- | --- | --- |
+| CSP: Failure to Define Directive with No Fallback | Medium | 2 |
 | Content Security Policy (CSP) Header Not Set | Medium | 2 |
 | Cross-Domain Misconfiguration | Medium | 10 |
 | Missing Anti-clickjacking Header | Medium | 2 |
@@ -43,6 +44,52 @@ ZAP by [Checkmarx](https://checkmarx.com/).
 ## Alert Detail
 
 
+
+### [ CSP: Failure to Define Directive with No Fallback ](https://www.zaproxy.org/docs/alerts/10055/)
+
+
+
+##### Medium (High)
+
+### Description
+
+The Content Security Policy fails to define one of the directives that has no fallback. Missing/excluding them is the same as allowing anything.
+
+* URL: http://localhost:4200/robots.txt
+  * Method: `GET`
+  * Parameter: `Content-Security-Policy`
+  * Attack: ``
+  * Evidence: `default-src 'none'`
+  * Other Info: `The directive(s): frame-ancestors, form-action is/are among the directives that do not fallback to default-src.`
+* URL: http://localhost:4200/sitemap.xml
+  * Method: `GET`
+  * Parameter: `Content-Security-Policy`
+  * Attack: ``
+  * Evidence: `default-src 'none'`
+  * Other Info: `The directive(s): frame-ancestors, form-action is/are among the directives that do not fallback to default-src.`
+
+Instances: 2
+
+### Solution
+
+Ensure that your web server, application server, load balancer, etc. is properly configured to set the Content-Security-Policy header.
+
+### Reference
+
+
+* [ https://www.w3.org/TR/CSP/ ](https://www.w3.org/TR/CSP/)
+* [ https://caniuse.com/#search=content+security+policy ](https://caniuse.com/#search=content+security+policy)
+* [ https://content-security-policy.com/ ](https://content-security-policy.com/)
+* [ https://github.com/HtmlUnit/htmlunit-csp ](https://github.com/HtmlUnit/htmlunit-csp)
+* [ https://developers.google.com/web/fundamentals/security/csp#policy_applies_to_a_wide_variety_of_resources ](https://developers.google.com/web/fundamentals/security/csp#policy_applies_to_a_wide_variety_of_resources)
+
+
+#### CWE Id: [ 693 ](https://cwe.mitre.org/data/definitions/693.html)
+
+
+#### WASC Id: 15
+
+#### Source ID: 3
 
 ### [ Content Security Policy (CSP) Header Not Set ](https://www.zaproxy.org/docs/alerts/10038/)
 
