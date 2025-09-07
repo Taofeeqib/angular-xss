@@ -72,23 +72,33 @@ jobs:
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
       
-      # Run CodeQL Analysis
+      # Run CodeQL Analysis - analyzes and produces SARIF file(s)
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:javascript,typescript"
-          output: ./docs/reports/codeql-results.sarif
+          category: "javascript-analysis"
+          output: ./docs/reports
           
-      # Copy results to docs/reports directory
-      - name: Copy SARIF results to reports directory
+      # Copy and consolidate results to docs/reports directory
+      - name: Process CodeQL SARIF results
         run: |
-          if [ -f "./docs/reports/codeql-results.sarif" ]; then
-            echo "CodeQL SARIF file exists at ./docs/reports/codeql-results.sarif"
+          echo "Listing CodeQL SARIF files in ./docs/reports:"
+          find ./docs/reports -type f -name "*.sarif" | sort
+          
+          # Check if any SARIF files were generated
+          if [ -n "$(find ./docs/reports -type f -name '*.sarif')" ]; then
+            # Create a consolidated sarif file for DefectDojo
+            echo "Creating consolidated SARIF file for DefectDojo"
+            FIRST_FILE=$(find ./docs/reports -type f -name "*.sarif" | head -1)
+            cp "$FIRST_FILE" ./docs/reports/codeql-results.sarif
+            
+            # Display info about the consolidated file
+            echo "Consolidated SARIF file created at ./docs/reports/codeql-results.sarif"
             ls -la ./docs/reports/codeql-results.sarif
-            echo "First 20 lines of SARIF file:"
+            echo "First 20 lines of consolidated SARIF file:"
             head -n 20 ./docs/reports/codeql-results.sarif
           else
-            echo "CodeQL SARIF file not found, creating placeholder"
+            echo "No CodeQL SARIF files found, creating placeholder"
             echo '{
               "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
               "version": "2.1.0",
@@ -107,13 +117,8 @@ jobs:
             }' > ./docs/reports/codeql-results.sarif
           fi
 
-      # Upload SARIF file to GitHub Security
-      - name: Upload SARIF to GitHub
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: ./docs/reports/codeql-results.sarif
-          category: codeql
+      # CodeQL automatically uploads results, so we don't need this step.
+      # We're only keeping the artifact upload for DefectDojo integration
           
       # Save SARIF as artifact
       - name: Upload SARIF as artifact
