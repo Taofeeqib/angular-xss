@@ -491,20 +491,18 @@ jobs:
           # If no reports were found, create placeholders
           if [ ! -f "./docs/reports/zap-baseline-report.md" ] && [ ! -f "./docs/reports/baseline-report.md" ]; then
             echo "Creating placeholder for ZAP baseline report"
-            echo "# ZAP Baseline Scan Report (Placeholder)
-            
+            echo '# ZAP Baseline Scan Report (Placeholder)
+
 This is a placeholder for the ZAP baseline scan report.
-The actual scan may have failed to generate a report file due to permissions issues.
-            " > ./docs/reports/zap-baseline-report.md
+The actual scan may have failed to generate a report file due to permissions issues.' > ./docs/reports/zap-baseline-report.md
           fi
           
           if [ ! -f "./docs/reports/zap-full-scan-report.md" ] && [ ! -f "./docs/reports/full-scan-report.md" ]; then
             echo "Creating placeholder for ZAP full scan report"
-            echo "# ZAP Full Scan Report (Placeholder)
-            
+            echo '# ZAP Full Scan Report (Placeholder)
+
 This is a placeholder for the ZAP full scan report.
-The actual scan may have failed to generate a report file due to permissions issues.
-            " > ./docs/reports/zap-full-scan-report.md
+The actual scan may have failed to generate a report file due to permissions issues.' > ./docs/reports/zap-full-scan-report.md
           fi
           
           # Check if any reports were copied or created
