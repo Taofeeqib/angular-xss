@@ -27,16 +27,17 @@ rules:
 
   # Node.js API Vulnerabilities
   - id: express-no-helmet
-    pattern: |
-      import $EXPRESS from 'express';
-      ...
-      const $APP = $EXPRESS();
-      ...
-    pattern-not: |
-      import $H from 'helmet';
-      ...
-      $APP.use($H());
-      ...
+    patterns:
+      - pattern: |
+          import $EXPRESS from 'express';
+          ...
+          const $APP = $EXPRESS();
+          ...
+      - pattern-not: |
+          import $H from 'helmet';
+          ...
+          $APP.use($H());
+          ...
     message: >
       Express application detected without Helmet middleware. Helmet helps secure
       Express apps by setting various HTTP headers. Consider adding
