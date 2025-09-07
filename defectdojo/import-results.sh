@@ -105,13 +105,13 @@ if [ -f "${REPORTS_DIR}/angular-xss-sbom.json" ]; then
     fi
 fi
 
-# Import ZAP Baseline Scan Results
-if [ -f "${REPORTS_DIR}/baseline-report.md" ]; then
-    echo "Importing ZAP Baseline Scan results..."
+# Import ZAP Baseline Scan Results (XML format)
+if [ -f "${REPORTS_DIR}/zap-baseline-report.xml" ]; then
+    echo "Importing ZAP Baseline Scan results (XML)..."
     curl -X POST \
         -H "Authorization: Token ${API_KEY}" \
         -H "Content-Type: multipart/form-data" \
-        -F "file=@${REPORTS_DIR}/baseline-report.md" \
+        -F "file=@${REPORTS_DIR}/zap-baseline-report.xml" \
         -F "scan_type=ZAP Scan" \
         -F "engagement=${ENGAGEMENT_ID}" \
         -F "close_old_findings=false" \
@@ -119,19 +119,19 @@ if [ -f "${REPORTS_DIR}/baseline-report.md" ]; then
         "${DEFECTDOJO_URL}/api/v2/import-scan/"
     
     if [ $? -ne 0 ]; then
-        echo "Error importing ZAP Baseline Scan results"
+        echo "Error importing ZAP Baseline Scan XML results"
     else
-        echo "Successfully imported ZAP Baseline Scan results"
+        echo "Successfully imported ZAP Baseline Scan XML results"
     fi
 fi
 
-# Import ZAP Full Scan Results
-if [ -f "${REPORTS_DIR}/full-scan-report.md" ]; then
-    echo "Importing ZAP Full Scan results..."
+# Import ZAP Baseline Scan Results (JSON format)
+if [ -f "${REPORTS_DIR}/zap-baseline-report.json" ]; then
+    echo "Importing ZAP Baseline Scan results (JSON)..."
     curl -X POST \
         -H "Authorization: Token ${API_KEY}" \
         -H "Content-Type: multipart/form-data" \
-        -F "file=@${REPORTS_DIR}/full-scan-report.md" \
+        -F "file=@${REPORTS_DIR}/zap-baseline-report.json" \
         -F "scan_type=ZAP Scan" \
         -F "engagement=${ENGAGEMENT_ID}" \
         -F "close_old_findings=false" \
@@ -139,11 +139,70 @@ if [ -f "${REPORTS_DIR}/full-scan-report.md" ]; then
         "${DEFECTDOJO_URL}/api/v2/import-scan/"
     
     if [ $? -ne 0 ]; then
-        echo "Error importing ZAP Full Scan results"
+        echo "Error importing ZAP Baseline Scan JSON results"
     else
-        echo "Successfully imported ZAP Full Scan results"
+        echo "Successfully imported ZAP Baseline Scan JSON results"
     fi
 fi
+
+# Import ZAP Full Scan Results (XML format)
+if [ -f "${REPORTS_DIR}/zap-full-scan-report.xml" ]; then
+    echo "Importing ZAP Full Scan results (XML)..."
+    curl -X POST \
+        -H "Authorization: Token ${API_KEY}" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@${REPORTS_DIR}/zap-full-scan-report.xml" \
+        -F "scan_type=ZAP Scan" \
+        -F "engagement=${ENGAGEMENT_ID}" \
+        -F "close_old_findings=false" \
+        -F "scan_date=$(date +"%Y-%m-%d")" \
+        "${DEFECTDOJO_URL}/api/v2/import-scan/"
+    
+    if [ $? -ne 0 ]; then
+        echo "Error importing ZAP Full Scan XML results"
+    else
+        echo "Successfully imported ZAP Full Scan XML results"
+    fi
+fi
+
+# Import ZAP Full Scan Results (JSON format)
+if [ -f "${REPORTS_DIR}/zap-full-scan-report.json" ]; then
+    echo "Importing ZAP Full Scan results (JSON)..."
+    curl -X POST \
+        -H "Authorization: Token ${API_KEY}" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@${REPORTS_DIR}/zap-full-scan-report.json" \
+        -F "scan_type=ZAP Scan" \
+        -F "engagement=${ENGAGEMENT_ID}" \
+        -F "close_old_findings=false" \
+        -F "scan_date=$(date +"%Y-%m-%d")" \
+        "${DEFECTDOJO_URL}/api/v2/import-scan/"
+    
+    if [ $? -ne 0 ]; then
+        echo "Error importing ZAP Full Scan JSON results"
+    else
+        echo "Successfully imported ZAP Full Scan JSON results"
+    fi
+fi
+
+# Fallback to older report naming if available
+for report_type in "baseline" "full-scan"; do
+    for report_format in "md" "xml" "json"; do
+        report_file="${REPORTS_DIR}/${report_type}-report.${report_format}"
+        if [ -f "$report_file" ] && [ ! -f "${REPORTS_DIR}/zap-${report_type}-report.${report_format}" ]; then
+            echo "Found legacy format report: $report_file, importing..."
+            curl -X POST \
+                -H "Authorization: Token ${API_KEY}" \
+                -H "Content-Type: multipart/form-data" \
+                -F "file=@${report_file}" \
+                -F "scan_type=ZAP Scan" \
+                -F "engagement=${ENGAGEMENT_ID}" \
+                -F "close_old_findings=false" \
+                -F "scan_date=$(date +"%Y-%m-%d")" \
+                "${DEFECTDOJO_URL}/api/v2/import-scan/"
+        fi
+    done
+done
 
 # Import CodeQL Results
 if [ -f "${REPORTS_DIR}/codeql-results.sarif" ]; then
