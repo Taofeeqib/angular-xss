@@ -1,55 +1,70 @@
-## Cross Site Scripting
+# DevSecOps Pipeline for Angular XSS Application
 
-* Step 1: Open terminal and switch to project directory
+This project implements a comprehensive DevSecOps pipeline for a deliberately vulnerable Angular application to demonstrate security scanning capabilities in CI/CD.
+
+## Pipeline Architecture
+
+The pipeline includes the following security stages:
+
+1. **Secrets Scanning** - Using TruffleHog OSS to detect exposed credentials
+2. **Static Application Security Testing (SAST)** - Using Semgrep with JavaScript, Angular, and Node.js rulesets
+3. **Software Composition Analysis (SCA)** - Using OWASP Dependency-Check to identify vulnerable dependencies
+4. **Software Bill of Materials (SBOM)** - Using CycloneDX to generate a comprehensive inventory of components
+5. **Dynamic Application Security Testing (DAST)** - Using OWASP ZAP to perform runtime security testing
+6. **Vulnerability Reporting** - Aggregating all findings in DefectDojo
+
+![DevSecOps Pipeline Architecture](./docs/images/pipeline-architecture.png)
+
+## Setup Instructions
+
+### Prerequisites
+
+- GitHub account
+- Docker and Docker Compose installed
+- Access to DefectDojo instance (or run locally using provided docker-compose file)
+
+### Running the Pipeline
+
+1. Push your code to GitHub to trigger the workflow
+2. Manually trigger the workflow from the GitHub Actions tab
+
+### Running DefectDojo Locally
 
 ```bash
-cd /root/angular-xss/xss
-```
-
-* Step 2: Build the docker images for both frontend and the API
-
-```bash
-docker-compose build
-```
-
-* Step 3: Start the app
-
-```bash
+cd defectdojo
 docker-compose up -d
 ```
 
-* Step 4: Access the app on `http://<your-server-ip>:4200`
+Access DefectDojo at http://localhost:8080 with credentials:
+- Username: admin
+- Password: admin
 
-> **Note:** To fetch server ip type in `serverip` in the terminal
+## Vulnerability Findings
 
-* Step 5: Signup as an admin, Enter some random email id and password, also enable the `Signup as an admin` checkbox
+The pipeline is designed to detect:
 
-* Step 6: Now it's time to login as an Admin, While logging in as an Admin enable `Signin as an admin` flag
+1. Secrets and credentials exposed in code
+2. XSS vulnerabilities in Angular code
+3. Vulnerable dependencies in both frontend and backend
+4. Other security issues defined in Semgrep rules
 
-* Step 7: After successful login you should see `Add New Movies` option in the Navigation bar
+## Integration with DefectDojo
 
-* Step 8: Now create some movies using that option
+Scan results from all security tools are aggregated in DefectDojo for:
+- Centralized vulnerability management
+- Tracking remediation progress
+- Generating comprehensive reports
+- Historical security trend analysis
 
-* Step 9: While creating a new movies entry in the `Movie Link` input you can add an XSS payload like `javascript:alert("Hacked!")` 
+## Screenshots
 
-* Step 10: If you are successful in creating the movie now access the `Movies` tab
+See the `docs/screenshots` directory for:
+- Successful SAST scan results
+- Identified XSS vulnerabilities
+- DefectDojo dashboard
 
-* Step 11: Now click on the `Click Here` button to see an attack taking place, This should pop up with an alert box stating that it is `Hacked!`
+## Future Enhancements
 
-* Step 12: You can repeat from `Step 9` this time you try with a different payload like `javascript:alert(window.localStorage.getItem('token'))`
-
-* Step 13: If you are successful in the attack then you should see an alert box with a JWT token value.
-
-### Teardown
-
-* Step 1: Switch to project directory
-
-```bash
-cd /root/angular-xss/xss
-```
-
-* Step 2: Bring down the app
-
-```bash
-docker-compose down
-```
+- Implement container scanning
+- Add automated security regression testing
+- Enhance Semgrep rules for custom vulnerabilities

@@ -1,0 +1,58 @@
+{
+  "scanners": [
+    "jar",
+    "archive",
+    "node",
+    "npm",
+    "js",
+    "composer"
+  ],
+  "analyzers": {
+    "node": {
+      "enabled": true,
+      "packageLock": true
+    },
+    "npm": {
+      "enabled": true,
+      "packageLock": true
+    },
+    "javascript": {
+      "enabled": true
+    },
+    "nuspec": {
+      "enabled": false
+    },
+    "nugetconf": {
+      "enabled": false
+    },
+    "central": {
+      "enabled": false
+    },
+    "bundle-audit": {
+      "enabled": false
+    },
+    "openssl": {
+      "enabled": false
+    },
+    "nexus": {
+      "enabled": false
+    },
+    "autoconf": {
+      "enabled": false
+    },
+    "pip": {
+      "enabled": false
+    },
+    "composer": {
+      "enabled": false
+    },
+    "cpanfile": {
+      "enabled": false
+    }
+  },
+  "format": "ALL",
+  "nvdFilteredFields": "cve",
+  "junitFailOnCVSS": 7,
+  "cveValidForHours": 4,
+  "failBuildOnCVSS": 7
+}

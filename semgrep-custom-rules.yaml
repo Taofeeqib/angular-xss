@@ -1,0 +1,82 @@
+rules:
+  # Angular XSS Vulnerabilities
+  - id: angular-xss-innerhtml
+    pattern: |
+      [innerHTML]="..."
+    message: >
+      Potential XSS vulnerability found. The [innerHTML] binding in Angular bypasses
+      built-in sanitization and can lead to XSS attacks. Consider using textContent
+      instead, or ensure that HTML content is properly sanitized.
+    languages: [html, typescript]
+    severity: WARNING
+
+  - id: angular-xss-bypass-security
+    patterns:
+      - pattern-either:
+          - pattern: this.$SANITIZER.bypassSecurityTrustHtml(...)
+          - pattern: this.$SANITIZER.bypassSecurityTrustScript(...)
+          - pattern: this.$SANITIZER.bypassSecurityTrustStyle(...)
+          - pattern: this.$SANITIZER.bypassSecurityTrustUrl(...)
+          - pattern: this.$SANITIZER.bypassSecurityTrustResourceUrl(...)
+    message: >
+      Security bypass in Angular detected. Using bypassSecurityTrust methods bypasses
+      Angular's built-in protections and can lead to XSS vulnerabilities. Only use
+      when you're absolutely sure the content is safe.
+    languages: [typescript]
+    severity: ERROR
+
+  # Node.js API Vulnerabilities
+  - id: express-no-helmet
+    pattern: |
+      import $EXPRESS from 'express';
+      ...
+      const $APP = $EXPRESS();
+      ...
+    pattern-not: |
+      import $H from 'helmet';
+      ...
+      $APP.use($H());
+      ...
+    message: >
+      Express application detected without Helmet middleware. Helmet helps secure
+      Express apps by setting various HTTP headers. Consider adding
+      'app.use(helmet())' to enhance security.
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  - id: mongoose-injection
+    pattern: |
+      $COLLECTION.find({ $where: $STRING })
+    message: >
+      Potential NoSQL injection vulnerability detected. Using $where with user input
+      can lead to NoSQL injection attacks. Use query operators instead or sanitize
+      the input.
+    languages: [javascript, typescript]
+    severity: ERROR
+
+  # JWT Token Security
+  - id: jwt-weak-secret
+    patterns:
+      - pattern-either:
+          - pattern: |
+              require('jsonwebtoken').sign(..., "...",...);
+          - pattern: |
+              import jwt from 'jsonwebtoken';
+              ...
+              jwt.sign(..., "...",...);
+    message: >
+      Hardcoded JWT secret detected. Hardcoding secrets in source code is a security
+      risk. Use environment variables or a secure secret management system instead.
+    languages: [javascript, typescript]
+    severity: ERROR
+
+  # Secrets and Credentials
+  - id: hardcoded-credentials
+    patterns:
+      - pattern-regex: (password|passwd|pwd|secret|token|api[-_]?key)(\s*[=:]\s*)(['"][^'"]{8,}['"])
+    message: >
+      Potential hardcoded credential detected. Storing credentials in source code
+      is a security risk. Use environment variables or a secure secret management
+      system instead.
+    languages: [javascript, typescript, html]
+    severity: ERROR

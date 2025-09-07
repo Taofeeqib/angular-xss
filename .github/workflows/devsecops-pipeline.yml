@@ -1,0 +1,180 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  secrets-scanning:
+    name: Secrets Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@v3.63.7
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  sast-scanning:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+    needs: secrets-scanning
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Semgrep scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/javascript
+            p/angular
+            p/nodejsscan
+            ./xss/semgrep.yaml
+            ./semgrep-custom-rules.yaml
+          output: semgrep-results.sarif
+          
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
+
+  sca-scanning:
+    name: Software Composition Analysis
+    runs-on: ubuntu-latest
+    needs: sast-scanning
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: OWASP Dependency-Check Scan - Backend
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Angular-XSS-Backend'
+          path: './xss/api'
+          format: 'SARIF'
+          out: './reports'
+          args: >-
+            --suppression ./dependency-check-suppressions.xml
+            --scan-config ./dependency-check-config.json
+          
+      - name: OWASP Dependency-Check Scan - Frontend
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Angular-XSS-Frontend'
+          path: './xss/frontend'
+          format: 'SARIF'
+          out: './reports'
+          args: >-
+            --suppression ./dependency-check-suppressions.xml
+            --scan-config ./dependency-check-config.json
+          
+      - name: Upload SARIF files
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: './reports/'
+          
+  sbom-generation:
+    name: Software Bill of Materials
+    runs-on: ubuntu-latest
+    needs: sca-scanning
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Generate SBOM with CycloneDX
+        uses: CycloneDX/gh-node-module-generatebom@master
+        with:
+          path: './xss'
+          output: './angular-xss-sbom.json'
+          
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: angular-xss-sbom
+          path: './angular-xss-sbom.json'
+
+  dast-scanning:
+    name: Dynamic Application Security Testing
+    runs-on: ubuntu-latest
+    needs: sbom-generation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Start Angular XSS application with Docker Compose
+        run: |
+          cd ./xss
+          docker-compose build
+          docker-compose up -d
+          # Wait for application to be ready
+          sleep 60
+          
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'http://localhost:4200'
+          allow_issue_writing: true
+          cmd_options: '-a -j -T 10'
+          rules_file_name: './zap-rules.tsv'
+          issue_title: 'ZAP Baseline Scan Report'
+          markdown_report: true
+          
+      - name: ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.8.0
+        with:
+          target: 'http://localhost:4200'
+          allow_issue_writing: true
+          cmd_options: '-a -j -T 10'
+          rules_file_name: './zap-rules.tsv'
+          issue_title: 'ZAP Full Scan Report'
+          markdown_report: true
+          
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-reports
+          path: |
+            baseline-report.md
+            full-scan-report.md
+            
+      - name: Stop Docker Containers
+        if: always()
+        run: |
+          cd ./xss
+          docker-compose down
+          
+  defectdojo-import:
+    name: Import Results to DefectDojo
+    runs-on: ubuntu-latest
+    needs: [secrets-scanning, sast-scanning, sca-scanning, sbom-generation, dast-scanning]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
+          
+      - name: Import to DefectDojo
+        run: |
+          chmod +x ./defectdojo/import-results.sh
+          ./defectdojo/import-results.sh ${{ secrets.DEFECTDOJO_URL }} ${{ secrets.DEFECTDOJO_API_KEY }} ${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}
+        env:
+          DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+          DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
+          DEFECTDOJO_ENGAGEMENT_ID: ${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}

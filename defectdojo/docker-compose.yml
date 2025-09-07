@@ -1,0 +1,76 @@
+version: '3.7'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: defectdojo
+      MYSQL_USER: defectdojo
+      MYSQL_PASSWORD: defectdojo
+      MYSQL_ROOT_PASSWORD: defectdojo
+    volumes:
+      - defectdojo-mysql-data:/var/lib/mysql
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: defectdojo
+      RABBITMQ_DEFAULT_PASS: defectdojo
+    restart: always
+    volumes:
+      - defectdojo-rabbitmq-data:/var/lib/rabbitmq
+
+  defectdojo:
+    image: defectdojo/defectdojo-django:latest
+    depends_on:
+      - mysql
+      - rabbitmq
+    environment:
+      DD_DATABASE_URL: mysql://defectdojo:defectdojo@mysql:3306/defectdojo
+      DD_CELERY_BROKER_URL: amqp://defectdojo:defectdojo@rabbitmq:5672/
+      DD_ADMIN_USER: admin
+      DD_ADMIN_PASSWORD: admin
+      DD_ADMIN_MAIL: admin@localhost
+      DD_ALLOWED_HOSTS: "*"
+      DD_DEBUG: 'False'
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - defectdojo-media:/app/media
+
+  celerybeat:
+    image: defectdojo/defectdojo-django:latest
+    depends_on:
+      - mysql
+      - rabbitmq
+    environment:
+      DD_DATABASE_URL: mysql://defectdojo:defectdojo@mysql:3306/defectdojo
+      DD_CELERY_BROKER_URL: amqp://defectdojo:defectdojo@rabbitmq:5672/
+      DD_ADMIN_USER: admin
+      DD_ADMIN_PASSWORD: admin
+      DD_ADMIN_MAIL: admin@localhost
+      DD_ALLOWED_HOSTS: "*"
+    restart: always
+    entrypoint: ['/entrypoint-celery-beat.sh']
+
+  celeryworker:
+    image: defectdojo/defectdojo-django:latest
+    depends_on:
+      - mysql
+      - rabbitmq
+    environment:
+      DD_DATABASE_URL: mysql://defectdojo:defectdojo@mysql:3306/defectdojo
+      DD_CELERY_BROKER_URL: amqp://defectdojo:defectdojo@rabbitmq:5672/
+      DD_ADMIN_USER: admin
+      DD_ADMIN_PASSWORD: admin
+      DD_ADMIN_MAIL: admin@localhost
+      DD_ALLOWED_HOSTS: "*"
+    restart: always
+    entrypoint: ['/entrypoint-celery-worker.sh']
+
+volumes:
+  defectdojo-mysql-data:
+  defectdojo-rabbitmq-data:
+  defectdojo-media:
