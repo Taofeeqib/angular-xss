@@ -187,6 +187,8 @@ jobs:
       - name: Ensure docs/reports directory exists
         run: mkdir -p ./docs/reports
 
+      - run: npm install
+      
       - name: Generate SBOM with CycloneDX
         uses: CycloneDX/gh-node-module-generatebom@master
         with:
@@ -251,8 +253,8 @@ jobs:
         with:
           target: 'http://localhost:4200'
           allow_issue_writing: true
-          # Generate reports and adjust options for better detection
-          cmd_options: '-a -j -T 60 -z "-config globalexcludeurl.url_list.url\(0\)=.*/favicon.ico$" -x /tmp/zap-output/zap-baseline-report.xml -J /tmp/zap-output/zap-baseline-report.json'
+          # Use default report formats (report_json.json, report_xml.xml, report_html.html, report_md.md)
+          cmd_options: '-a -j -T 60 -z "-config globalexcludeurl.url_list.url\(0\)=.*/favicon.ico$"'
           rules_file_name: 'zap-rules.tsv'
           issue_title: 'ZAP Baseline Scan Report'
           artifact_name: 'zap-baseline-report'

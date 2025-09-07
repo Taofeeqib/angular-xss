@@ -114,7 +114,7 @@ else
 fi
 
 # Import ZAP report
-for zap_file in "$REPORTS_DIR/zap-baseline-report.xml" "$REPORTS_DIR/report_html.html" "$REPORTS_DIR/zap-baseline-report.json"; do
+for zap_file in "$REPORTS_DIR/report_xml.xml" "$REPORTS_DIR/report_html.html" "$REPORTS_DIR/report_json.json"; do
   if [ -f "$zap_file" ] && [ -s "$zap_file" ]; then
     echo "Importing ZAP report: $zap_file"
     IMPORT_RESPONSE=$(curl -s -X POST \

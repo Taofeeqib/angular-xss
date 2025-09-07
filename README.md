@@ -7,7 +7,7 @@ This project implements a comprehensive DevSecOps pipeline for a deliberately vu
 The pipeline includes the following security stages:
 
 1. **Secrets Scanning** - Using TruffleHog OSS to detect exposed credentials
-2. **Static Application Security Testing (SAST)** - Using Semgrep with JavaScript, Angular, and Node.js rulesets
+2. **Static Application Security Testing (SAST)** - Using CodeQL with JavaScript, Angular, and Node.js rulesets
 3. **Software Composition Analysis (SCA)** - Using OWASP Dependency-Check to identify vulnerable dependencies
 4. **Software Bill of Materials (SBOM)** - Using CycloneDX to generate a comprehensive inventory of components
 5. **Dynamic Application Security Testing (DAST)** - Using OWASP ZAP to perform runtime security testing
@@ -46,7 +46,6 @@ The pipeline is designed to detect:
 1. Secrets and credentials exposed in code
 2. XSS vulnerabilities in Angular code
 3. Vulnerable dependencies in both frontend and backend
-4. Other security issues defined in Semgrep rules
 
 ## Integration with DefectDojo
 
@@ -57,7 +56,7 @@ Scan results from all security tools are aggregated in DefectDojo for:
 - Historical security trend analysis
 
 ### Note on ZAP Reports
-When importing ZAP scan results into DefectDojo, use the XML format (`zap-baseline-report.xml`) which is specifically formatted for DefectDojo compatibility. The XML report requires properly formatted URLs with fully qualified domain names to be parsed correctly by DefectDojo's ZAP parser.
+When importing ZAP scan results into DefectDojo, use the XML format (`report_xml.xml`) which is specifically formatted for DefectDojo compatibility. The XML report requires properly formatted URLs with fully qualified domain names to be parsed correctly by DefectDojo's ZAP parser.
 
 ## Screenshots
 
@@ -75,21 +74,12 @@ All security scan results are stored in the `docs/reports` directory for easy ac
 - **OWASP Dependency-Check Results** - `dependency-check-*.sarif`
 - **CycloneDX SBOM** - `angular-xss-sbom.json`
 - **ZAP DAST Reports** - Multiple formats available:
-  - XML format: `zap-baseline-report.xml` (DefectDojo compatible format)
-  - JSON format: `zap-baseline-report.json` and `report_json.json`
-  - Markdown format: `zap-baseline-report.md` and `report_md.md`
-  - HTML format: `report_html.html` (contains detailed findings with risk levels)
+  - JSON format: `report_json.json`
+  - Markdown format: `report_md.md`
+  - HTML format: `report_html.html` 
 
-A comprehensive report index is available at `docs/reports/README.md`.
 
 To view SARIF files, you can use:
 - GitHub Security Code Scanning dashboard
 - [SARIF Viewer VSCode Extension](https://marketplace.visualstudio.com/items?itemName=MS-SarifVSCode.sarif-viewer)
 - [SARIF Web Viewer](https://microsoft.github.io/sarif-web-component/)
-
-## Future Enhancements
-
-- Implement container scanning
-- Add automated security regression testing
-- Enhance Semgrep rules for custom vulnerabilities
-- Add GitHub Pages to host scan reports
