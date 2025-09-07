@@ -27,8 +27,6 @@ jobs:
         uses: trufflesecurity/trufflehog@v3.63.7
         with:
           path: ./
-          # Only scan changes, without comparing commits
-          only_verified: true
           extra_args: --debug
 
   sast-scanning:
@@ -216,7 +214,7 @@ jobs:
           output: './angular-xss-sbom.json'
           
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: angular-xss-sbom
           path: './angular-xss-sbom.json'
@@ -258,7 +256,7 @@ jobs:
           markdown_report: true
           
       - name: Upload ZAP Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: zap-reports
@@ -281,7 +279,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./artifacts
           
