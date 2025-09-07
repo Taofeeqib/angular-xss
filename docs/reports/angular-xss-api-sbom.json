@@ -1,0 +1,36 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.3",
+  "serialNumber": "urn:uuid:6a572d60-13f1-47f7-83b4-fa39b1896aaa",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-09-07T17:22:49.558Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "Node.js module",
+        "version": "3.10.6"
+      }
+    ],
+    "component": {
+      "type": "library",
+      "bom-ref": "pkg:npm/api@1.0.0",
+      "name": "api",
+      "version": "1.0.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "purl": "pkg:npm/api@1.0.0"
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:npm/api@1.0.0"
+    }
+  ]
+}
