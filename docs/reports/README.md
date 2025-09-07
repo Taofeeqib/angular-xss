@@ -41,3 +41,9 @@ These reports are automatically imported into DefectDojo for centralized vulnera
 - **zap-reports**
   - [README.md](./README.md)
   - [report_md.md](./report_md.md)
+- **zap-reports**
+  - [README.md](./README.md)
+  - [angular-xss-sbom.json](./angular-xss-sbom.json)
+  - [codeql-results.sarif](./codeql-results.sarif)
+  - [dependency-check-report.sarif](./dependency-check-report.sarif)
+  - [report_md.md](./report_md.md)
