@@ -419,16 +419,26 @@ jobs:
           ls -la zap-rules.tsv
           cat zap-rules.tsv
       
+      # Create a temporary directory with proper permissions for ZAP to write reports
+      - name: Create writable temp directory for ZAP
+        run: |
+          mkdir -p /tmp/zap-output
+          chmod 777 /tmp/zap-output
+          echo "Created writable directory for ZAP reports at /tmp/zap-output"
+          ls -la /tmp/zap-output
+
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         continue-on-error: true
         with:
           target: 'http://localhost:4200'
           allow_issue_writing: true
-          cmd_options: '-a -j -T 10 -w zap-baseline-report.md'
+          # Use Docker's /tmp directory which should be writable
+          cmd_options: '-a -j -T 10 -w /tmp/zap-output/zap-baseline-report.md'
           rules_file_name: 'zap-rules.tsv'
           issue_title: 'ZAP Baseline Scan Report'
           artifact_name: 'zap-baseline-report'
+          docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
           
       - name: ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.8.0
@@ -436,25 +446,68 @@ jobs:
         with:
           target: 'http://localhost:4200'
           allow_issue_writing: true
-          cmd_options: '-a -j -T 10 -w zap-full-scan-report.md'
+          # Use Docker's /tmp directory which should be writable
+          cmd_options: '-a -j -T 10 -w /tmp/zap-output/zap-full-scan-report.md'
           rules_file_name: 'zap-rules.tsv'
           issue_title: 'ZAP Full Scan Report'
+          docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
           
       # Copy ZAP reports to docs/reports directory
       - name: Copy ZAP reports to docs/reports
         run: |
-          echo "Looking for ZAP report files..."
-          find . -maxdepth 1 -name "*report*.md" -o -name "*report*.html" -o -name "*report*.json"
+          echo "Looking for ZAP report files in various locations..."
           
-          # Try multiple possible filenames for the reports
-          for report in zap-baseline-report.md baseline-report.md report_md.md zap-full-scan-report.md full-scan-report.md; do
+          # Check in /tmp/zap-output where we directed ZAP to write reports
+          echo "Checking in /tmp/zap-output:"
+          ls -la /tmp/zap-output || echo "Directory not found"
+          
+          # Check in current directory
+          echo "Checking in current directory:"
+          find . -maxdepth 2 -name "*report*.md" -o -name "*report*.html" -o -name "*report*.json"
+          
+          # Try to copy from our specific ZAP output directory first
+          if [ -d "/tmp/zap-output" ]; then
+            echo "Copying reports from /tmp/zap-output:"
+            cp -v /tmp/zap-output/*.* ./docs/reports/ 2>/dev/null || echo "No files to copy from /tmp/zap-output"
+          fi
+          
+          # Then try multiple possible filenames and locations for the reports
+          for report in \
+            ./zap-baseline-report.md \
+            ./zap-full-scan-report.md \
+            ./baseline-report.md \
+            ./full-scan-report.md \
+            ./report_md.md \
+            /tmp/zap-baseline-report.md \
+            /tmp/zap-full-scan-report.md \
+            /zap/wrk/zap-baseline-report.md \
+            /zap/wrk/zap-full-scan-report.md; do
             if [ -f "$report" ]; then
               echo "Found report: $report"
-              cp "$report" ./docs/reports/
+              cp -v "$report" ./docs/reports/
             fi
           done
           
-          # Check if any reports were copied
+          # If no reports were found, create placeholders
+          if [ ! -f "./docs/reports/zap-baseline-report.md" ] && [ ! -f "./docs/reports/baseline-report.md" ]; then
+            echo "Creating placeholder for ZAP baseline report"
+            echo "# ZAP Baseline Scan Report (Placeholder)
+            
+This is a placeholder for the ZAP baseline scan report.
+The actual scan may have failed to generate a report file due to permissions issues.
+            " > ./docs/reports/zap-baseline-report.md
+          fi
+          
+          if [ ! -f "./docs/reports/zap-full-scan-report.md" ] && [ ! -f "./docs/reports/full-scan-report.md" ]; then
+            echo "Creating placeholder for ZAP full scan report"
+            echo "# ZAP Full Scan Report (Placeholder)
+            
+This is a placeholder for the ZAP full scan report.
+The actual scan may have failed to generate a report file due to permissions issues.
+            " > ./docs/reports/zap-full-scan-report.md
+          fi
+          
+          # Check if any reports were copied or created
           echo "Contents of docs/reports directory:"
           ls -la ./docs/reports/
           
