@@ -493,41 +493,47 @@ jobs:
             fi
           done
           
-          # If no reports were found, create placeholders
+          # If no reports were found, create placeholders using a safer approach
           if [ ! -f "./docs/reports/zap-baseline-report.xml" ] && [ ! -f "./docs/reports/zap-baseline-report.json" ]; then
-            echo "Creating placeholder for ZAP baseline report (XML)"
-            echo '<?xml version="1.0" encoding="UTF-8"?>
-<OWASPZAPReport version="2.11.0" generated="$(date)">
-  <site name="http://localhost:4200">
-    <alerts></alerts>
-  </site>
-</OWASPZAPReport>' > ./docs/reports/zap-baseline-report.xml
+            echo "Creating placeholder for ZAP baseline reports (XML and JSON)"
+            # Create XML placeholder using multiple echo statements to avoid YAML syntax issues
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > ./docs/reports/zap-baseline-report.xml
+            echo '<OWASPZAPReport version="2.11.0" generated="'$(date)'">' >> ./docs/reports/zap-baseline-report.xml
+            echo '  <site name="http://localhost:4200">' >> ./docs/reports/zap-baseline-report.xml
+            echo '    <alerts></alerts>' >> ./docs/reports/zap-baseline-report.xml
+            echo '  </site>' >> ./docs/reports/zap-baseline-report.xml
+            echo '</OWASPZAPReport>' >> ./docs/reports/zap-baseline-report.xml
             
-            echo "Creating placeholder for ZAP baseline report (JSON)"
-            echo '{
+            # Create JSON placeholder
+            cat > ./docs/reports/zap-baseline-report.json << 'EOF'
+{
   "site": "http://localhost:4200",
-  "generated": "'$(date)'",
+  "generated": "2025-09-07T12:00:00",
   "version": "2.11.0",
   "alerts": []
-}' > ./docs/reports/zap-baseline-report.json
+}
+EOF
           fi
           
           if [ ! -f "./docs/reports/zap-full-scan-report.xml" ] && [ ! -f "./docs/reports/zap-full-scan-report.json" ]; then
-            echo "Creating placeholder for ZAP full scan report (XML)"
-            echo '<?xml version="1.0" encoding="UTF-8"?>
-<OWASPZAPReport version="2.11.0" generated="$(date)">
-  <site name="http://localhost:4200">
-    <alerts></alerts>
-  </site>
-</OWASPZAPReport>' > ./docs/reports/zap-full-scan-report.xml
+            echo "Creating placeholder for ZAP full scan reports (XML and JSON)"
+            # Create XML placeholder using multiple echo statements
+            echo '<?xml version="1.0" encoding="UTF-8"?>' > ./docs/reports/zap-full-scan-report.xml
+            echo '<OWASPZAPReport version="2.11.0" generated="'$(date)'">' >> ./docs/reports/zap-full-scan-report.xml
+            echo '  <site name="http://localhost:4200">' >> ./docs/reports/zap-full-scan-report.xml
+            echo '    <alerts></alerts>' >> ./docs/reports/zap-full-scan-report.xml
+            echo '  </site>' >> ./docs/reports/zap-full-scan-report.xml
+            echo '</OWASPZAPReport>' >> ./docs/reports/zap-full-scan-report.xml
             
-            echo "Creating placeholder for ZAP full scan report (JSON)"
-            echo '{
+            # Create JSON placeholder using heredoc with fixed date to avoid YAML issues
+            cat > ./docs/reports/zap-full-scan-report.json << 'EOF'
+{
   "site": "http://localhost:4200",
-  "generated": "'$(date)'",
+  "generated": "2025-09-07T12:00:00",
   "version": "2.11.0",
   "alerts": []
-}' > ./docs/reports/zap-full-scan-report.json
+}
+EOF
           fi
           
           # Check if any reports were copied or created
