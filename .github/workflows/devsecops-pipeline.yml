@@ -455,74 +455,16 @@ jobs:
           docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
           docker_args: '--network="host"'
           
-      # Copy ZAP config file to workspace
-      - name: Copy ZAP configuration files
-        run: |
-          # Ensure ZAP config file is accessible
-          if [ -f "zap-advanced-config.conf" ]; then
-            cp zap-advanced-config.conf /tmp/zap-advanced-config.conf
-            chmod 644 /tmp/zap-advanced-config.conf
-            echo "ZAP advanced config file copied to /tmp"
-          else
-            echo "Warning: ZAP advanced config file not found"
-          fi
-          
-      # - name: ZAP Full Scan
-      #   uses: zaproxy/action-full-scan@v0.8.0
-      #   continue-on-error: true
-      #   with:
-      #     target: 'http://localhost:4200'
-      #     allow_issue_writing: true
-      #     # Use the advanced config and specify additional APIs to test
-      #     cmd_options: '-a -j -T 90 -c /tmp/zap-advanced-config.conf -z "-configfile /tmp/zap-advanced-config.conf" -x /tmp/zap-output/zap-full-scan-report.xml -J /tmp/zap-output/zap-full-scan-report.json'
-      #     rules_file_name: 'zap-rules.tsv'
-      #     issue_title: 'ZAP Full Scan Report'
-      #     docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
-      #     docker_args: '--network="host"'
-      #     cmd_progress_timeout: 120
-          
-      # Attempt to scan specific paths known to be vulnerable
-      - name: ZAP Targeted Scan
-        if: always()  # Run even if full scan succeeds to ensure we test specific paths
-        uses: zaproxy/action-full-scan@v0.8.0
-        continue-on-error: true
-        with:
-          target: 'http://localhost:4200'
-          allow_issue_writing: true
-          # Focus specifically on XSS and other critical tests with known target URLs
-          cmd_options: '-a -j -T 60 -c /tmp/zap-advanced-config.conf -z "-configfile /tmp/zap-advanced-config.conf -config scanner.attackStrength=INSANE -config rules.ascanrules.xss.strength=INSANE" -x /tmp/zap-output/zap-targeted-report.xml -J /tmp/zap-output/zap-targeted-report.json'
-          rules_file_name: 'zap-rules.tsv'
-          issue_title: 'ZAP Targeted Scan Report'
-          docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
-          docker_args: '--network="host"'
-          cmd_progress_timeout: 120
-          
-      # Try scanning the API directly as a separate test
-      - name: ZAP API Scan
-        if: always() # Run regardless of other scan results
-        continue-on-error: true
-        run: |
-          echo "Running direct API scan..."
-          # Try to access API endpoints directly with ZAP
-          docker run --rm --network="host" -v /tmp:/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py -t http://localhost:8000 -J /zap/wrk/zap-api-scan-report.json -x /zap/wrk/zap-api-scan-report.xml -r /zap/wrk/zap-api-scan-report.html -a -d -T 60 -j --hook=/zap/auth_hook.py || echo "API scan failed but continuing"
-          
-          # Check if reports were generated
-          if [ -f "/tmp/zap-api-scan-report.json" ]; then
-            cp /tmp/zap-api-scan-report.* ./docs/reports/ 2>/dev/null || echo "Could not copy API scan reports"
-          fi
+      # Only keep the baseline scan, removing other ZAP scans
           
       # Copy ZAP reports to docs/reports directory
-      - name: Copy ZAP reports to docs/reports
+      - name: Copy ZAP Baseline Scan reports
         run: |
-          echo "Looking for ZAP report files in various locations..."
+          echo "Looking for ZAP Baseline Scan report files..."
           
           # Check in /tmp/zap-output where we directed ZAP to write reports
           echo "Checking in /tmp/zap-output:"
           ls -la /tmp/zap-output || echo "Directory not found"
-          
-          # Check in current directory
-          echo "Checking in current directory:"
-          find . -maxdepth 2 -name "*report*.xml" -o -name "*report*.json"
           
           # Try to copy from our specific ZAP output directory first
           if [ -d "/tmp/zap-output" ]; then
@@ -530,53 +472,20 @@ jobs:
             cp -v /tmp/zap-output/*.* ./docs/reports/ 2>/dev/null || echo "No files to copy from /tmp/zap-output"
           fi
           
-          # Copy all ZAP reports from various directories
-          echo "Using find to locate all ZAP report files across multiple locations..."
-          find /tmp -name "*report*.json" -o -name "*report*.xml" -o -name "*report*.html" 2>/dev/null | while read report; do
-            echo "Found report via find: $report"
-            cp -v "$report" ./docs/reports/ 2>/dev/null || echo "Failed to copy $report"
-          done
-          
-          # Then try multiple possible filenames and locations for the reports
+          # Look for baseline scan reports only
           for report in \
             ./zap-baseline-report.xml \
             ./zap-baseline-report.json \
-            ./zap-full-scan-report.xml \
-            ./zap-full-scan-report.json \
-            ./zap-targeted-report.xml \
-            ./zap-targeted-report.json \
-            ./zap-api-scan-report.xml \
-            ./zap-api-scan-report.json \
-            ./zap-api-scan-report.html \
             ./report_json.json \
             ./report_xml.xml \
+            ./report_html.html \
+            ./report_md.md \
             /tmp/zap-output/zap-baseline-report.xml \
             /tmp/zap-output/zap-baseline-report.json \
-            /tmp/zap-output/zap-full-scan-report.xml \
-            /tmp/zap-output/zap-full-scan-report.json \
-            /tmp/zap-output/zap-targeted-report.xml \
-            /tmp/zap-output/zap-targeted-report.json \
-            /tmp/zap-api-scan-report.xml \
-            /tmp/zap-api-scan-report.json \
-            /tmp/zap-api-scan-report.html \
             /tmp/zap-baseline-report.xml \
             /tmp/zap-baseline-report.json \
-            /tmp/zap-full-scan-report.xml \
-            /tmp/zap-full-scan-report.json \
-            /tmp/zap-targeted-report.xml \
-            /tmp/zap-targeted-report.json \
-            /tmp/zap-api-scan-report.xml \
-            /tmp/zap-api-scan-report.json \
-            /tmp/zap-api-scan-report.html \
             /zap/wrk/zap-baseline-report.xml \
-            /zap/wrk/zap-baseline-report.json \
-            /zap/wrk/zap-full-scan-report.xml \
-            /zap/wrk/zap-full-scan-report.json \
-            /zap/wrk/zap-targeted-report.xml \
-            /zap/wrk/zap-targeted-report.json \
-            /zap/wrk/zap-api-scan-report.xml \
-            /zap/wrk/zap-api-scan-report.json \
-            /zap/wrk/zap-api-scan-report.html; do
+            /zap/wrk/zap-baseline-report.json; do
             if [ -f "$report" ]; then
               echo "Found report: $report"
               cp -v "$report" ./docs/reports/
@@ -604,25 +513,7 @@ jobs:
             echo '}' >> ./docs/reports/zap-baseline-report.json
           fi
           
-          if [ ! -f "./docs/reports/zap-full-scan-report.xml" ] && [ ! -f "./docs/reports/zap-full-scan-report.json" ]; then
-            echo "Creating placeholder for ZAP full scan reports (XML and JSON)"
-            
-            # Create XML placeholder using multiple echo statements
-            echo '<?xml version="1.0" encoding="UTF-8"?>' > ./docs/reports/zap-full-scan-report.xml
-            echo '<OWASPZAPReport version="2.11.0" generated="2025-09-07T12:00:00">' >> ./docs/reports/zap-full-scan-report.xml
-            echo '  <site name="http://localhost:4200">' >> ./docs/reports/zap-full-scan-report.xml
-            echo '    <alerts></alerts>' >> ./docs/reports/zap-full-scan-report.xml
-            echo '  </site>' >> ./docs/reports/zap-full-scan-report.xml
-            echo '</OWASPZAPReport>' >> ./docs/reports/zap-full-scan-report.xml
-            
-            # Create JSON placeholder with individual echo statements
-            echo '{' > ./docs/reports/zap-full-scan-report.json
-            echo '  "site": "http://localhost:4200",' >> ./docs/reports/zap-full-scan-report.json
-            echo '  "generated": "2025-09-07T12:00:00",' >> ./docs/reports/zap-full-scan-report.json
-            echo '  "version": "2.11.0",' >> ./docs/reports/zap-full-scan-report.json
-            echo '  "alerts": []' >> ./docs/reports/zap-full-scan-report.json
-            echo '}' >> ./docs/reports/zap-full-scan-report.json
-          fi
+          # Full scan placeholder removed
           
           # Check if any reports were copied or created
           echo "Contents of docs/reports directory:"
