@@ -7,6 +7,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Required permissions for code scanning API
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
 jobs:
   secrets-scanning:
     name: Secrets Scanning
@@ -32,6 +38,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
       
       - name: Semgrep scan
         uses: semgrep/semgrep-action@v1
@@ -68,11 +76,23 @@ jobs:
             echo "Created empty SARIF file as semgrep scan failed"
           fi
           
+      - name: Check SARIF file
+        run: |
+          echo "Checking if SARIF file exists and is valid"
+          if [ -f "semgrep-results.sarif" ]; then
+            ls -la semgrep-results.sarif
+            echo "SARIF file exists. Displaying first 20 lines:"
+            head -n 20 semgrep-results.sarif
+          else
+            echo "SARIF file does not exist!"
+          fi
+
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: semgrep-results.sarif
+          category: semgrep
 
   sca-scanning:
     name: Software Composition Analysis
@@ -81,6 +101,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
       
       - name: OWASP Dependency-Check Scan - Backend
         uses: dependency-check/Dependency-Check_Action@main
@@ -104,11 +126,26 @@ jobs:
             --suppression ./dependency-check-suppressions.xml
             --scan-config ./dependency-check-config.json
           
+      - name: Check SARIF files
+        run: |
+          echo "Checking if SARIF files exist in reports directory"
+          if [ -d "./reports" ]; then
+            ls -la ./reports/
+            echo "Found files in reports directory"
+            find ./reports -name "*.sarif" | while read file; do
+              echo "Found SARIF file: $file"
+            done
+          else
+            echo "Reports directory does not exist!"
+            mkdir -p ./reports
+          fi
+
       - name: Upload SARIF files
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: './reports/'
+          category: dependency-check
           
   sbom-generation:
     name: Software Bill of Materials
