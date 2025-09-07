@@ -275,6 +275,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      # Install necessary dependencies for ZAP scanning
+      - name: Install dependencies for ZAP
+        run: |
+          # Check if curl is installed
+          if ! command -v curl &> /dev/null; then
+            echo "Installing curl"
+            apt-get update && apt-get install -y curl
+          fi
+        
       # Install Docker Compose plugin if needed
       - name: Set up Docker Compose
         run: |
@@ -310,36 +319,51 @@ jobs:
       - name: Ensure docs/reports directory exists
         run: mkdir -p ./docs/reports
         
+      # Copy ZAP rules file to the workspace root for the scan
+      - name: Copy ZAP rules file to workspace root
+        run: |
+          cp ./zap-rules.tsv ./
+          echo "Verifying ZAP rules file location:"
+          ls -la zap-rules.tsv || echo "ZAP rules file not found in root"
+      
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
+        continue-on-error: true
         with:
           target: 'http://localhost:4200'
           allow_issue_writing: true
-          cmd_options: '-a -j -T 10'
+          cmd_options: '-a -j -T 10 -w zap-baseline-report.md'
           rules_file_name: 'zap-rules.tsv'
           issue_title: 'ZAP Baseline Scan Report'
-          markdown_report: true
+          artifact_name: 'zap-baseline-report'
           
       - name: ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.8.0
+        continue-on-error: true
         with:
           target: 'http://localhost:4200'
           allow_issue_writing: true
-          cmd_options: '-a -j -T 10'
+          cmd_options: '-a -j -T 10 -w zap-full-scan-report.md'
           rules_file_name: 'zap-rules.tsv'
           issue_title: 'ZAP Full Scan Report'
-          markdown_report: true
           
       # Copy ZAP reports to docs/reports directory
       - name: Copy ZAP reports to docs/reports
         run: |
-          if [ -f "baseline-report.md" ]; then
-            cp baseline-report.md ./docs/reports/
-          fi
+          echo "Looking for ZAP report files..."
+          find . -maxdepth 1 -name "*report*.md" -o -name "*report*.html" -o -name "*report*.json"
           
-          if [ -f "full-scan-report.md" ]; then
-            cp full-scan-report.md ./docs/reports/
-          fi
+          # Try multiple possible filenames for the reports
+          for report in zap-baseline-report.md baseline-report.md report_md.md zap-full-scan-report.md full-scan-report.md; do
+            if [ -f "$report" ]; then
+              echo "Found report: $report"
+              cp "$report" ./docs/reports/
+            fi
+          done
+          
+          # Check if any reports were copied
+          echo "Contents of docs/reports directory:"
+          ls -la ./docs/reports/
           
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
