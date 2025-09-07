@@ -334,14 +334,12 @@ jobs:
             cp ./angular-xss/zap-rules.tsv ./
           else
             echo "ZAP rules file not found, creating a basic one"
-            cat > zap-rules.tsv << 'EOL'
-10016	IGNORE	http://localhost:4200	(IGNORE: A technology has been identified)
-10020	IGNORE	http://localhost:4200	(IGNORE: X-Frame-Options Header Not Set)
-10021	IGNORE	http://localhost:4200	(IGNORE: X-Content-Type-Options Header Missing)
-10038	IGNORE	http://localhost:4200	(IGNORE: Content Security Policy (CSP) Header Not Set)
-10049	IGNORE	http://localhost:4200	(IGNORE: Non-Storable Content)
-40012	FAIL	http://localhost:4200	(FAIL: Cross Site Scripting (Reflected))
-EOL
+            echo '10016	IGNORE	http://localhost:4200	(IGNORE: A technology has been identified)' > zap-rules.tsv
+            echo '10020	IGNORE	http://localhost:4200	(IGNORE: X-Frame-Options Header Not Set)' >> zap-rules.tsv
+            echo '10021	IGNORE	http://localhost:4200	(IGNORE: X-Content-Type-Options Header Missing)' >> zap-rules.tsv
+            echo '10038	IGNORE	http://localhost:4200	(IGNORE: Content Security Policy (CSP) Header Not Set)' >> zap-rules.tsv
+            echo '10049	IGNORE	http://localhost:4200	(IGNORE: Non-Storable Content)' >> zap-rules.tsv
+            echo '40012	FAIL	http://localhost:4200	(FAIL: Cross Site Scripting (Reflected))' >> zap-rules.tsv
           fi
           
           # Verify the rules file exists and show content
