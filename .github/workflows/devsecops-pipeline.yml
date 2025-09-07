@@ -275,12 +275,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      # Install Docker Compose plugin if needed
+      - name: Set up Docker Compose
+        run: |
+          # Check if docker-compose is available
+          if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+            echo "Installing Docker Compose plugin"
+            # Install Docker Compose V2
+            DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+            mkdir -p $DOCKER_CONFIG/cli-plugins
+            curl -SL https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+            chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+          fi
+          
+          # Verify Docker and Docker Compose are installed
+          echo "Docker version:"
+          docker --version
+          echo "Docker Compose version:"
+          docker compose version || docker-compose --version || echo "Docker Compose not installed properly"
+
       - name: Start Angular XSS application with Docker Compose
         run: |
           cd ./xss
-          docker-compose build
-          docker-compose up -d
+          # Try using docker compose command (v2) first, if it fails try docker-compose (v1)
+          echo "Starting containers with docker compose..."
+          docker compose build || docker-compose build || (echo "Docker Compose build failed" && exit 1)
+          docker compose up -d || docker-compose up -d || (echo "Docker Compose up failed" && exit 1)
+          
           # Wait for application to be ready
+          echo "Waiting for application to become available..."
           sleep 60
           
       # Create docs/reports directory if it doesn't exist
@@ -329,7 +352,12 @@ jobs:
         if: always()
         run: |
           cd ./xss
-          docker-compose down
+          # Try both docker compose (v2) and docker-compose (v1) commands
+          docker compose down || docker-compose down || true
+          
+          # Verify containers are stopped
+          echo "Checking for running containers:"
+          docker ps
           
   defectdojo-import:
     name: Import Results to DefectDojo
