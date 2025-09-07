@@ -56,6 +56,9 @@ Scan results from all security tools are aggregated in DefectDojo for:
 - Generating comprehensive reports
 - Historical security trend analysis
 
+### Note on ZAP Reports
+When importing ZAP scan results into DefectDojo, use the XML format (`zap-baseline-report.xml`) which is specifically formatted for DefectDojo compatibility. The XML report requires properly formatted URLs with fully qualified domain names to be parsed correctly by DefectDojo's ZAP parser.
+
 ## Screenshots
 
 See the `docs/screenshots` directory for:
@@ -71,7 +74,11 @@ All security scan results are stored in the `docs/reports` directory for easy ac
 - **CodeQL SAST Results** - `codeql-results.sarif`
 - **OWASP Dependency-Check Results** - `dependency-check-*.sarif`
 - **CycloneDX SBOM** - `angular-xss-sbom.json`
-- **ZAP DAST Reports** - `zap-baseline-report.md` and `zap-full-scan-report.md`
+- **ZAP DAST Reports** - Multiple formats available:
+  - XML format: `zap-baseline-report.xml` (DefectDojo compatible format)
+  - JSON format: `zap-baseline-report.json` and `report_json.json`
+  - Markdown format: `zap-baseline-report.md` and `report_md.md`
+  - HTML format: `report_html.html` (contains detailed findings with risk levels)
 
 A comprehensive report index is available at `docs/reports/README.md`.
 

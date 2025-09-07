@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OWASPZAPReport version="2.11.0" generated="2025-09-07T12:00:00">
+  <site name="http://localhost:4200">
+    <alerts>
+      <alertitem>
+        <pluginid>10038</pluginid>
+        <name>Content Security Policy (CSP) Header Not Set</name>
+        <riskcode>2</riskcode>
+        <confidence>2</confidence>
+        <riskdesc>Medium (Medium)</riskdesc>
+        <desc>Content Security Policy (CSP) is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross Site Scripting (XSS) and data injection attacks.</desc>
+        <instances>
+          <instance>
+            <uri>http://localhost:4200/</uri>
+            <method>GET</method>
+            <param></param>
+            <attack></attack>
+            <evidence></evidence>
+          </instance>
+        </instances>
+        <count>1</count>
+        <solution>Ensure that your web server, application server, load balancer, etc. is configured to set the Content-Security-Policy header.</solution>
+        <reference>https://developer.mozilla.org/en-US/docs/Web/Security/CSP/Introducing_Content_Security_Policy</reference>
+        <cweid>693</cweid>
+        <wascid>15</wascid>
+        <sourceid>3</sourceid>
+      </alertitem>
+      <alertitem>
+        <pluginid>10021</pluginid>
+        <name>X-Content-Type-Options Header Missing</name>
+        <riskcode>1</riskcode>
+        <confidence>2</confidence>
+        <riskdesc>Low (Medium)</riskdesc>
+        <desc>The Anti-MIME-Sniffing header X-Content-Type-Options was not set to 'nosniff'.</desc>
+        <instances>
+          <instance>
+            <uri>http://localhost:4200/</uri>
+            <method>GET</method>
+            <param>X-Content-Type-Options</param>
+            <attack></attack>
+            <evidence></evidence>
+          </instance>
+        </instances>
+        <count>1</count>
+        <solution>Ensure that the application/web server sets the Content-Type header appropriately, and that it sets the X-Content-Type-Options header to 'nosniff' for all web pages.</solution>
+        <reference>https://owasp.org/www-community/Security_Headers</reference>
+        <cweid>16</cweid>
+        <wascid>15</wascid>
+        <sourceid>3</sourceid>
+      </alertitem>
+    </alerts>
+  </site>
+</OWASPZAPReport>

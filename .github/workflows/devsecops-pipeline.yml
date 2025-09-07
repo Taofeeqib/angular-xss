@@ -35,8 +35,8 @@ jobs:
       # Generate TruffleHog report in docs/reports
       - name: Generate TruffleHog report
         run: |
-          echo "Running TruffleHog scan manually to save report"
-          docker run --rm -v $(pwd):/pwd trufflesecurity/trufflehog:latest github --repo file:///pwd --json > ./docs/reports/trufflehog-results.json || true
+          chmod +x ./.github/workflows/scripts/generate-trufflehog-report.sh
+          ./.github/workflows/scripts/generate-trufflehog-report.sh
           
       # Upload TruffleHog results as artifact
       - name: Upload TruffleHog results
@@ -81,68 +81,8 @@ jobs:
       # Copy and consolidate results to docs/reports directory
       - name: Process CodeQL SARIF results
         run: |
-          echo "Listing CodeQL SARIF files in ./docs/reports:"
-          find ./docs/reports -type f -name "*.sarif" | sort
-          
-          # Check if any SARIF files were generated
-          if [ -n "$(find ./docs/reports -type f -name '*.sarif')" ]; then
-            # Create a consolidated sarif file for DefectDojo
-            echo "Creating consolidated SARIF file for DefectDojo"
-            
-            # Find the first SARIF file and make a copy for DefectDojo
-            FIRST_FILE=$(find ./docs/reports -type f -name "*.sarif" | head -1)
-            echo "Using file: $FIRST_FILE for consolidated results"
-            
-            # Make sure the file exists and is not a directory
-            if [ -f "$FIRST_FILE" ]; then
-              cp "$FIRST_FILE" ./docs/reports/codeql-results.sarif
-              
-              # Display info about the consolidated file
-              echo "Consolidated SARIF file created at ./docs/reports/codeql-results.sarif"
-              ls -la ./docs/reports/codeql-results.sarif
-              echo "First 20 lines of consolidated SARIF file:"
-              head -n 20 ./docs/reports/codeql-results.sarif
-            else
-              echo "Warning: Selected file is not a regular file. Creating placeholder instead."
-              echo '{
-                "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-                "version": "2.1.0",
-                "runs": [
-                  {
-                    "tool": {
-                      "driver": {
-                        "name": "CodeQL",
-                        "version": "placeholder",
-                        "rules": []
-                      }
-                    },
-                    "results": []
-                  }
-                ]
-              }' > ./docs/reports/codeql-results.sarif
-            fi
-          else
-            echo "No CodeQL SARIF files found, creating placeholder"
-            echo '{
-              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-              "version": "2.1.0",
-              "runs": [
-                {
-                  "tool": {
-                    "driver": {
-                      "name": "CodeQL",
-                      "version": "placeholder",
-                      "rules": []
-                    }
-                  },
-                  "results": []
-                }
-              ]
-            }' > ./docs/reports/codeql-results.sarif
-          fi
-
-      # CodeQL automatically uploads results, so we don't need this step.
-      # We're only keeping the artifact upload for DefectDojo integration
+          chmod +x ./.github/workflows/scripts/process-codeql-results.sh
+          ./.github/workflows/scripts/process-codeql-results.sh
           
       # Save SARIF as artifact
       - name: Upload SARIF as artifact
@@ -189,94 +129,14 @@ jobs:
           
       - name: Check SARIF files
         run: |
-          echo "Checking if SARIF files exist in docs/reports directory"
-          if [ -d "./docs/reports" ]; then
-            ls -la ./docs/reports/
-            echo "Found files in docs/reports directory"
-            sarifCount=$(find ./docs/reports -name "*.sarif" | wc -l)
-            
-            if [ "$sarifCount" -gt 0 ]; then
-              find ./docs/reports -name "*.sarif" | while read file; do
-                echo "Found SARIF file: $file"
-                echo "File contents (first 20 lines):"
-                head -n 20 "$file"
-              done
-            else
-              echo "No SARIF files found in docs/reports directory. Creating placeholder."
-              echo '{
-                "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-                "version": "2.1.0",
-                "runs": [
-                  {
-                    "tool": {
-                      "driver": {
-                        "name": "OWASP Dependency-Check",
-                        "version": "placeholder",
-                        "rules": []
-                      }
-                    },
-                    "results": []
-                  }
-                ]
-              }' > ./docs/reports/dependency-check-placeholder.sarif
-            fi
-          else
-            echo "Reports directory does not exist!"
-            mkdir -p ./docs/reports
-            echo '{
-              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-              "version": "2.1.0",
-              "runs": [
-                {
-                  "tool": {
-                    "driver": {
-                      "name": "OWASP Dependency-Check",
-                      "version": "placeholder",
-                      "rules": []
-                    }
-                  },
-                  "results": []
-                }
-              ]
-            }' > ./docs/reports/dependency-check-placeholder.sarif
-          fi
+          chmod +x ./.github/workflows/scripts/check-sca-results.sh
+          ./.github/workflows/scripts/check-sca-results.sh
 
       - name: Find SARIF files
         id: find-sarif
         run: |
-          # Find all SARIF files
-          echo "Finding SARIF files in ./docs/reports directory"
-          find ./docs/reports -name "*.sarif" -type f
-          
-          # Check if we have any SARIF files
-          SARIF_COUNT=$(find ./docs/reports -name "*.sarif" -type f | wc -l)
-          
-          if [ "$SARIF_COUNT" -eq 0 ]; then
-            echo "No SARIF files found, creating placeholder"
-            echo '{
-              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-              "version": "2.1.0",
-              "runs": [
-                {
-                  "tool": {
-                    "driver": {
-                      "name": "OWASP Dependency-Check",
-                      "version": "placeholder",
-                      "rules": []
-                    }
-                  },
-                  "results": []
-                }
-              ]
-            }' > ./docs/reports/dependency-check-placeholder.sarif
-            
-            echo "primary_sarif=./docs/reports/dependency-check-placeholder.sarif" >> $GITHUB_OUTPUT
-          else
-            # Get the first SARIF file for primary upload
-            PRIMARY_SARIF=$(find ./docs/reports -name "*.sarif" -type f | head -1)
-            echo "Found primary SARIF file: $PRIMARY_SARIF"
-            echo "primary_sarif=$PRIMARY_SARIF" >> $GITHUB_OUTPUT
-          fi
+          chmod +x ./.github/workflows/scripts/find-sca-sarif.sh
+          ./.github/workflows/scripts/find-sca-sarif.sh
 
       # Upload primary SARIF file
       - name: Upload primary SARIF file
@@ -359,33 +219,13 @@ jobs:
       # Install Docker Compose plugin if needed
       - name: Set up Docker Compose
         run: |
-          # Check if docker-compose is available
-          if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-            echo "Installing Docker Compose plugin"
-            # Install Docker Compose V2
-            DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
-            mkdir -p $DOCKER_CONFIG/cli-plugins
-            curl -SL https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
-            chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
-          fi
-          
-          # Verify Docker and Docker Compose are installed
-          echo "Docker version:"
-          docker --version
-          echo "Docker Compose version:"
-          docker compose version || docker-compose --version || echo "Docker Compose not installed properly"
+          chmod +x ./.github/workflows/scripts/setup-docker.sh
+          ./.github/workflows/scripts/setup-docker.sh
 
       - name: Start Angular XSS application with Docker Compose
         run: |
-          cd ./xss
-          # Try using docker compose command (v2) first, if it fails try docker-compose (v1)
-          echo "Starting containers with docker compose..."
-          docker compose build || docker-compose build || (echo "Docker Compose build failed" && exit 1)
-          docker compose up -d || docker-compose up -d || (echo "Docker Compose up failed" && exit 1)
-          
-          # Wait for application to be ready
-          echo "Waiting for application to become available..."
-          sleep 60
+          chmod +x ./.github/workflows/scripts/start-app.sh
+          ./.github/workflows/scripts/start-app.sh
           
       # Create docs/reports directory if it doesn't exist
       - name: Ensure docs/reports directory exists
@@ -394,30 +234,8 @@ jobs:
       # Create and verify ZAP rules file for scanning
       - name: Set up ZAP rules file
         run: |
-          # Check if zap-rules.tsv exists in the repo
-          echo "Checking for ZAP rules files..."
-          echo "Current directory: $(pwd)"
-          ls -la
-          
-          if [ -f "zap-rules.tsv" ]; then
-            echo "ZAP rules file already exists in the root directory"
-          elif [ -f "./angular-xss/zap-rules.tsv" ]; then
-            echo "Found ZAP rules in angular-xss directory, copying to root"
-            cp ./angular-xss/zap-rules.tsv ./
-          else
-            echo "ZAP rules file not found, creating a basic one"
-            echo '10016	IGNORE	http://localhost:4200	(IGNORE: A technology has been identified)' > zap-rules.tsv
-            echo '10020	IGNORE	http://localhost:4200	(IGNORE: X-Frame-Options Header Not Set)' >> zap-rules.tsv
-            echo '10021	IGNORE	http://localhost:4200	(IGNORE: X-Content-Type-Options Header Missing)' >> zap-rules.tsv
-            echo '10038	IGNORE	http://localhost:4200	(IGNORE: Content Security Policy (CSP) Header Not Set)' >> zap-rules.tsv
-            echo '10049	IGNORE	http://localhost:4200	(IGNORE: Non-Storable Content)' >> zap-rules.tsv
-            echo '40012	FAIL	http://localhost:4200	(FAIL: Cross Site Scripting (Reflected))' >> zap-rules.tsv
-          fi
-          
-          # Verify the rules file exists and show content
-          echo "Verifying ZAP rules file location and content:"
-          ls -la zap-rules.tsv
-          cat zap-rules.tsv
+          chmod +x ./.github/workflows/scripts/setup-zap-rules.sh
+          ./.github/workflows/scripts/setup-zap-rules.sh
       
       # Create a temporary directory with proper permissions for ZAP to write reports
       - name: Create writable temp directory for ZAP
@@ -426,20 +244,6 @@ jobs:
           chmod 777 /tmp/zap-output
           echo "Created writable directory for ZAP reports at /tmp/zap-output"
           ls -la /tmp/zap-output
-
-      # Verify application is running and accessible
-      - name: Verify application is running
-        run: |
-          # Use curl to verify application is accessible
-          echo "Checking if application is running..."
-          curl -v http://localhost:4200 || echo "Warning: Application may not be accessible via localhost"
-          
-          # Check docker containers and network information
-          echo "Docker container status:"
-          docker ps
-          echo "Docker network information:"
-          docker network ls
-          docker network inspect bridge
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
@@ -455,69 +259,11 @@ jobs:
           docker_name: 'ghcr.io/zaproxy/zaproxy:stable'
           docker_args: '--network="host"'
           
-      # Only keep the baseline scan, removing other ZAP scans
-          
       # Copy ZAP reports to docs/reports directory
       - name: Copy ZAP Baseline Scan reports
         run: |
-          echo "Looking for ZAP Baseline Scan report files..."
-          
-          # Check in /tmp/zap-output where we directed ZAP to write reports
-          echo "Checking in /tmp/zap-output:"
-          ls -la /tmp/zap-output || echo "Directory not found"
-          
-          # Try to copy from our specific ZAP output directory first
-          if [ -d "/tmp/zap-output" ]; then
-            echo "Copying reports from /tmp/zap-output:"
-            cp -v /tmp/zap-output/*.* ./docs/reports/ 2>/dev/null || echo "No files to copy from /tmp/zap-output"
-          fi
-          
-          # Look for baseline scan reports only
-          for report in \
-            ./zap-baseline-report.xml \
-            ./zap-baseline-report.json \
-            ./report_json.json \
-            ./report_xml.xml \
-            ./report_html.html \
-            ./report_md.md \
-            /tmp/zap-output/zap-baseline-report.xml \
-            /tmp/zap-output/zap-baseline-report.json \
-            /tmp/zap-baseline-report.xml \
-            /tmp/zap-baseline-report.json \
-            /zap/wrk/zap-baseline-report.xml \
-            /zap/wrk/zap-baseline-report.json; do
-            if [ -f "$report" ]; then
-              echo "Found report: $report"
-              cp -v "$report" ./docs/reports/
-            fi
-          done
-          
-          # If no reports were found, create placeholders using individual echo statements
-          if [ ! -f "./docs/reports/zap-baseline-report.xml" ] && [ ! -f "./docs/reports/zap-baseline-report.json" ]; then
-            echo "Creating placeholder for ZAP baseline reports (XML and JSON)"
-            
-            # Create XML placeholder using multiple echo statements
-            echo '<?xml version="1.0" encoding="UTF-8"?>' > ./docs/reports/zap-baseline-report.xml
-            echo '<OWASPZAPReport version="2.11.0" generated="2025-09-07T12:00:00">' >> ./docs/reports/zap-baseline-report.xml
-            echo '  <site name="http://localhost:4200">' >> ./docs/reports/zap-baseline-report.xml
-            echo '    <alerts></alerts>' >> ./docs/reports/zap-baseline-report.xml
-            echo '  </site>' >> ./docs/reports/zap-baseline-report.xml
-            echo '</OWASPZAPReport>' >> ./docs/reports/zap-baseline-report.xml
-            
-            # Create JSON placeholder with individual echo statements
-            echo '{' > ./docs/reports/zap-baseline-report.json
-            echo '  "site": "http://localhost:4200",' >> ./docs/reports/zap-baseline-report.json
-            echo '  "generated": "2025-09-07T12:00:00",' >> ./docs/reports/zap-baseline-report.json
-            echo '  "version": "2.11.0",' >> ./docs/reports/zap-baseline-report.json
-            echo '  "alerts": []' >> ./docs/reports/zap-baseline-report.json
-            echo '}' >> ./docs/reports/zap-baseline-report.json
-          fi
-          
-          # Full scan placeholder removed
-          
-          # Check if any reports were copied or created
-          echo "Contents of docs/reports directory:"
-          ls -la ./docs/reports/
+          chmod +x ./.github/workflows/scripts/copy-zap-reports.sh
+          ./.github/workflows/scripts/copy-zap-reports.sh
           
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
@@ -529,13 +275,8 @@ jobs:
       - name: Stop Docker Containers
         if: always()
         run: |
-          cd ./xss
-          # Try both docker compose (v2) and docker-compose (v1) commands
-          docker compose down || docker-compose down || true
-          
-          # Verify containers are stopped
-          echo "Checking for running containers:"
-          docker ps
+          chmod +x ./.github/workflows/scripts/stop-app.sh
+          ./.github/workflows/scripts/stop-app.sh
           
   save-reports:
     name: Save Scan Reports
@@ -558,85 +299,14 @@ jobs:
           
       - name: Save all scan reports to docs/reports
         run: |
-          # Create comprehensive report index file
-          echo "# DevSecOps Scan Reports" > ./docs/reports/README.md
-          echo "Generated on $(date)" >> ./docs/reports/README.md
-          echo "" >> ./docs/reports/README.md
-          echo "## Available Reports" >> ./docs/reports/README.md
-          
-          # Process all artifacts and copy to docs/reports
-          for artifact_dir in ./artifacts/*; do
-            if [ -d "$artifact_dir" ]; then
-              artifact_name=$(basename "$artifact_dir")
-              echo "Processing artifact: $artifact_name"
-              
-              # Copy all files from the artifact directory to docs/reports
-              cp -v $artifact_dir/* ./docs/reports/ 2>/dev/null || echo "No files to copy from $artifact_name"
-              
-              # Add entry to the report index
-              echo "- **$artifact_name**" >> ./docs/reports/README.md
-              for file in $artifact_dir/*; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file")
-                  echo "  - [$filename](./$filename)" >> ./docs/reports/README.md
-                fi
-              done
-            fi
-          done
-          
-          # Check if any reports were saved
-          echo "Saved reports in docs/reports directory:"
-          ls -la ./docs/reports/
+          chmod +x ./.github/workflows/scripts/save-reports.sh
+          ./.github/workflows/scripts/save-reports.sh
           
       # Commit and push the reports to the repository
       - name: Commit and push reports to the repository
         run: |
-          # Configure git
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          # Set merge strategy to avoid conflicts prompt
-          git config pull.rebase false
-          
-          # Fetch latest changes from remote
-          echo "Fetching latest changes from remote..."
-          git fetch origin ${GITHUB_REF_NAME}
-          
-          # Check for changes in remote and merge if needed
-          echo "Checking for updates from remote..."
-          git pull origin ${GITHUB_REF_NAME} --strategy-option theirs || echo "Failed to pull, proceeding anyway"
-          
-          # Ensure docs/reports directory exists
-          mkdir -p ./docs/reports/
-          
-          # Stage the changes
-          echo "Adding report files to git..."
-          git add ./docs/reports/
-          
-          # Verify changes were staged
-          git status
-          
-          # Check if there are changes to commit
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            # Commit the changes
-            echo "Committing report files..."
-            git commit -m "Add security scan reports [skip ci]"
-            
-            # Handle potential conflicts during push
-            echo "Pushing changes to the repository..."
-            git push origin ${GITHUB_REF_NAME} || {
-              # If push failed, try pull and merge again
-              echo "Push failed, attempting to merge remote changes and retry..."
-              git pull origin ${GITHUB_REF_NAME} --strategy-option theirs
-              # Try push again
-              git push origin ${GITHUB_REF_NAME} || echo "Failed to push after merge attempt"
-            }
-            
-            echo "Reports have been committed and pushed to the repository."
-            echo "View them at: https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/docs/reports"
-          fi
+          chmod +x ./.github/workflows/scripts/commit-reports.sh
+          ./.github/workflows/scripts/commit-reports.sh
         continue-on-error: true  # Continue workflow even if push fails
 
   defectdojo-import:
@@ -655,56 +325,5 @@ jobs:
       # Copy artifacts to docs/reports for local usage
       - name: Copy artifacts to docs/reports
         run: |
-          mkdir -p ./docs/reports
-          
-          echo "Copying all artifacts to docs/reports directory..."
-          
-          # TruffleHog results
-          if [ -d "./artifacts/trufflehog-results" ]; then
-            echo "Found TruffleHog results"
-            cp ./artifacts/trufflehog-results/* ./docs/reports/ || echo "No TruffleHog files to copy"
-          else
-            echo "No TruffleHog results directory found"
-          fi
-          
-          # CodeQL results
-          if [ -d "./artifacts/codeql-results" ]; then
-            echo "Found CodeQL results"
-            cp ./artifacts/codeql-results/* ./docs/reports/ || echo "No CodeQL files to copy"
-          else
-            echo "No CodeQL results directory found"
-          fi
-          
-          # SCA results
-          if [ -d "./artifacts/sca-results" ]; then
-            echo "Found SCA results"
-            cp ./artifacts/sca-results/* ./docs/reports/ || echo "No SCA files to copy"
-          else
-            echo "No SCA results directory found"
-          fi
-          
-          # SBOM results
-          if [ -d "./artifacts/angular-xss-sbom" ]; then
-            echo "Found SBOM results"
-            cp ./artifacts/angular-xss-sbom/* ./docs/reports/ || echo "No SBOM files to copy"
-          else
-            echo "No SBOM results directory found"
-          fi
-          
-          # ZAP results
-          if [ -d "./artifacts/zap-reports" ]; then
-            echo "Found ZAP results"
-            cp ./artifacts/zap-reports/* ./docs/reports/ || echo "No ZAP files to copy"
-          else
-            echo "No ZAP results directory found"
-          fi
-          
-          # Verify copied files
-          echo "Files in docs/reports directory after copying artifacts:"
-          ls -la ./docs/reports/
-          
-          # Run verification script to check for required reports
-          echo "Running verification script..."
-          chmod +x ./verify-reports.sh
-          ./verify-reports.sh
-          
+          chmod +x ./.github/workflows/scripts/copy-artifacts.sh
+          ./.github/workflows/scripts/copy-artifacts.sh
