@@ -7,11 +7,11 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# Required permissions for code scanning API
+# Required permissions for code scanning API and committing reports
 permissions:
   security-events: write
   actions: read
-  contents: read
+  contents: write  # Upgraded from 'read' to 'write' to allow committing files
 
 jobs:
   secrets-scanning:
@@ -31,13 +31,7 @@ jobs:
         uses: trufflesecurity/trufflehog@v3.63.7
         with:
           path: ./
-          extra_args: --debug --json
-          
-      # Generate TruffleHog report in docs/reports
-      - name: Generate TruffleHog report
-        run: |
-          echo "Running TruffleHog scan manually to save report"
-          docker run --rm -v $(pwd):/pwd trufflesecurity/trufflehog:latest github --repo file:///pwd --json > ./docs/reports/trufflehog-results.json || true
+          extra_args: --debug --json   
           
       # Upload TruffleHog results as artifact
       - name: Upload TruffleHog results
@@ -411,6 +405,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}  # Use GitHub token for authentication
+          fetch-depth: 0  # Full history for proper commits
         
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -452,15 +449,43 @@ jobs:
           echo "Saved reports in docs/reports directory:"
           ls -la ./docs/reports/
           
-      # Option to commit the reports directly to the repository
-      - name: Create local commit with reports (optional)
-        if: github.event_name == 'workflow_dispatch'
+      # Commit and push the reports to the repository
+      - name: Commit and push reports to the repository
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          # Configure git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Check for changes in remote and pull if needed
+          echo "Checking for updates from remote..."
+          git pull origin ${GITHUB_REF_NAME} --no-rebase || echo "Failed to pull, proceeding anyway"
+          
+          # Ensure docs/reports directory exists
+          mkdir -p ./docs/reports/
+          
+          # Stage the changes
+          echo "Adding report files to git..."
           git add ./docs/reports/
-          git commit -m "Add scan reports [skip ci]" || echo "No changes to commit"
-          echo "Reports committed to the repository. Use git push to push these changes."
+          
+          # Verify changes were staged
+          git status
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            # Commit the changes
+            echo "Committing report files..."
+            git commit -m "Add security scan reports [skip ci]"
+            
+            # Push to the repository
+            echo "Pushing changes to the repository..."
+            git push origin ${GITHUB_REF_NAME}
+            
+            echo "Reports have been committed and pushed to the repository."
+            echo "View them at: https://github.com/${GITHUB_REPOSITORY}/tree/${GITHUB_REF_NAME}/docs/reports"
+          fi
+        continue-on-error: true  # Continue workflow even if push fails
 
   defectdojo-import:
     name: Import Results to DefectDojo
