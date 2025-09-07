@@ -23,14 +23,32 @@ jobs:
         with:
           fetch-depth: 0
       
+      # Create docs/reports directory if it doesn't exist
+      - name: Ensure docs/reports directory exists
+        run: mkdir -p ./docs/reports
+
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@v3.63.7
         with:
           path: ./
-          extra_args: --debug
+          extra_args: --debug --json
+          
+      # Generate TruffleHog report in docs/reports
+      - name: Generate TruffleHog report
+        run: |
+          echo "Running TruffleHog scan manually to save report"
+          docker run --rm -v $(pwd):/pwd trufflesecurity/trufflehog:latest github --repo file:///pwd --json > ./docs/reports/trufflehog-results.json || true
+          
+      # Upload TruffleHog results as artifact
+      - name: Upload TruffleHog results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trufflehog-results
+          path: ./docs/reports/trufflehog-results.json
 
   sast-scanning:
-    name: Static Application Security Testing
+    name: Static Application Security Testing (CodeQL)
     runs-on: ubuntu-latest
     needs: secrets-scanning
     steps:
@@ -38,23 +56,39 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ github.token }}
-      
-      - name: Semgrep scan
-        uses: semgrep/semgrep-action@v1
-        continue-on-error: true
+
+      # Create docs/reports directory
+      - name: Ensure docs/reports directory exists
+        run: mkdir -p ./docs/reports
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          config: >-
-            p/javascript
-            p/typescript
-            p/react
-            r/typescript.angular.security.audit.angular-allow-trusted-dynamic-script.angular-allow-trusted-dynamic-script
-            ./xss/semgrep.yaml
-            ./semgrep-custom-rules.yaml
-          output: semgrep-results.sarif
+          languages: javascript, typescript
+          queries: security-and-quality
+          
+      # Autobuild (attempts to automatically build any compiled languages)
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
       
-      - name: Create empty SARIF file if it doesn't exist
+      # Run CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript,typescript"
+          output: ./docs/reports/codeql-results.sarif
+          
+      # Copy results to docs/reports directory
+      - name: Copy SARIF results to reports directory
         run: |
-          if [ ! -f "semgrep-results.sarif" ]; then
+          if [ -f "./docs/reports/codeql-results.sarif" ]; then
+            echo "CodeQL SARIF file exists at ./docs/reports/codeql-results.sarif"
+            ls -la ./docs/reports/codeql-results.sarif
+            echo "First 20 lines of SARIF file:"
+            head -n 20 ./docs/reports/codeql-results.sarif
+          else
+            echo "CodeQL SARIF file not found, creating placeholder"
             echo '{
               "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
               "version": "2.1.0",
@@ -62,7 +96,7 @@ jobs:
                 {
                   "tool": {
                     "driver": {
-                      "name": "Semgrep",
+                      "name": "CodeQL",
                       "version": "placeholder",
                       "rules": []
                     }
@@ -70,27 +104,24 @@ jobs:
                   "results": []
                 }
               ]
-            }' > semgrep-results.sarif
-            echo "Created empty SARIF file as semgrep scan failed"
-          fi
-          
-      - name: Check SARIF file
-        run: |
-          echo "Checking if SARIF file exists and is valid"
-          if [ -f "semgrep-results.sarif" ]; then
-            ls -la semgrep-results.sarif
-            echo "SARIF file exists. Displaying first 20 lines:"
-            head -n 20 semgrep-results.sarif
-          else
-            echo "SARIF file does not exist!"
+            }' > ./docs/reports/codeql-results.sarif
           fi
 
-      - name: Upload SARIF file
+      # Upload SARIF file to GitHub Security
+      - name: Upload SARIF to GitHub
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: semgrep-results.sarif
-          category: semgrep
+          sarif_file: ./docs/reports/codeql-results.sarif
+          category: codeql
+          
+      # Save SARIF as artifact
+      - name: Upload SARIF as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-results
+          path: ./docs/reports/codeql-results.sarif
 
   sca-scanning:
     name: Software Composition Analysis
@@ -103,7 +134,7 @@ jobs:
           token: ${{ github.token }}
       
       - name: Create reports directory
-        run: mkdir -p ./reports
+        run: mkdir -p ./docs/reports
         
       - name: OWASP Dependency-Check Scan - Backend
         uses: dependency-check/Dependency-Check_Action@main
@@ -111,7 +142,7 @@ jobs:
           project: 'Angular-XSS-Backend'
           path: './xss/api'
           format: 'SARIF'
-          out: './reports'
+          out: './docs/reports'
           args: >-
             --suppression ./dependency-check-suppressions.xml
             --failOnCVSS 11
@@ -122,27 +153,27 @@ jobs:
           project: 'Angular-XSS-Frontend'
           path: './xss/frontend'
           format: 'SARIF'
-          out: './reports'
+          out: './docs/reports'
           args: >-
             --suppression ./dependency-check-suppressions.xml
             --failOnCVSS 11
           
       - name: Check SARIF files
         run: |
-          echo "Checking if SARIF files exist in reports directory"
-          if [ -d "./reports" ]; then
-            ls -la ./reports/
-            echo "Found files in reports directory"
-            sarifCount=$(find ./reports -name "*.sarif" | wc -l)
+          echo "Checking if SARIF files exist in docs/reports directory"
+          if [ -d "./docs/reports" ]; then
+            ls -la ./docs/reports/
+            echo "Found files in docs/reports directory"
+            sarifCount=$(find ./docs/reports -name "*.sarif" | wc -l)
             
             if [ "$sarifCount" -gt 0 ]; then
-              find ./reports -name "*.sarif" | while read file; do
+              find ./docs/reports -name "*.sarif" | while read file; do
                 echo "Found SARIF file: $file"
                 echo "File contents (first 20 lines):"
                 head -n 20 "$file"
               done
             else
-              echo "No SARIF files found in reports directory. Creating placeholder."
+              echo "No SARIF files found in docs/reports directory. Creating placeholder."
               echo '{
                 "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
                 "version": "2.1.0",
@@ -158,11 +189,11 @@ jobs:
                     "results": []
                   }
                 ]
-              }' > ./reports/dependency-check-placeholder.sarif
+              }' > ./docs/reports/dependency-check-placeholder.sarif
             fi
           else
             echo "Reports directory does not exist!"
-            mkdir -p ./reports
+            mkdir -p ./docs/reports
             echo '{
               "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
               "version": "2.1.0",
@@ -178,16 +209,16 @@ jobs:
                   "results": []
                 }
               ]
-            }' > ./reports/dependency-check-placeholder.sarif
+            }' > ./docs/reports/dependency-check-placeholder.sarif
           fi
 
       - name: Find SARIF files
         id: find-sarif
         run: |
-          SARIF_FILES=$(find ./reports -name "*.sarif" | tr '\n' ',' | sed 's/,$//')
+          SARIF_FILES=$(find ./docs/reports -name "*.sarif" | tr '\n' ',' | sed 's/,$//')
           if [ -z "$SARIF_FILES" ]; then
             echo "No SARIF files found, using placeholder"
-            SARIF_FILES="./reports/dependency-check-placeholder.sarif"
+            SARIF_FILES="./docs/reports/dependency-check-placeholder.sarif"
           fi
           echo "sarif_files=$SARIF_FILES" >> $GITHUB_OUTPUT
           echo "Found SARIF files: $SARIF_FILES"
@@ -199,6 +230,14 @@ jobs:
           sarif_file: ${{ steps.find-sarif.outputs.sarif_files }}
           category: dependency-check
           
+      # Copy SARIF to artifact directory for persistent storage
+      - name: Upload SCA Results as Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sca-results
+          path: ./docs/reports/
+          
   sbom-generation:
     name: Software Bill of Materials
     runs-on: ubuntu-latest
@@ -207,17 +246,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      # Create docs/reports directory if it doesn't exist
+      - name: Ensure docs/reports directory exists
+        run: mkdir -p ./docs/reports
+
       - name: Generate SBOM with CycloneDX
         uses: CycloneDX/gh-node-module-generatebom@master
         with:
           path: './xss'
-          output: './angular-xss-sbom.json'
+          output: './docs/reports/angular-xss-sbom.json'
           
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
           name: angular-xss-sbom
-          path: './angular-xss-sbom.json'
+          path: './docs/reports/angular-xss-sbom.json'
 
   dast-scanning:
     name: Dynamic Application Security Testing
@@ -235,6 +278,10 @@ jobs:
           # Wait for application to be ready
           sleep 60
           
+      # Create docs/reports directory if it doesn't exist
+      - name: Ensure docs/reports directory exists
+        run: mkdir -p ./docs/reports
+        
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         with:
@@ -255,14 +302,23 @@ jobs:
           issue_title: 'ZAP Full Scan Report'
           markdown_report: true
           
+      # Copy ZAP reports to docs/reports directory
+      - name: Copy ZAP reports to docs/reports
+        run: |
+          if [ -f "baseline-report.md" ]; then
+            cp baseline-report.md ./docs/reports/
+          fi
+          
+          if [ -f "full-scan-report.md" ]; then
+            cp full-scan-report.md ./docs/reports/
+          fi
+          
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: zap-reports
-          path: |
-            baseline-report.md
-            full-scan-report.md
+          path: ./docs/reports/
             
       - name: Stop Docker Containers
         if: always()
@@ -282,6 +338,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
+      
+      # Copy artifacts to docs/reports for local usage
+      - name: Copy artifacts to docs/reports
+        run: |
+          mkdir -p ./docs/reports
+          
+          # Try to copy any existing reports from artifacts
+          find ./artifacts -type f -name "*.sarif" -o -name "*.json" -o -name "*.md" | while read file; do
+            cp "$file" ./docs/reports/
+          done
+          
+          # List all files in docs/reports for verification
+          echo "Files in docs/reports directory:"
+          ls -la ./docs/reports/
           
       - name: Import to DefectDojo
         run: |
@@ -295,3 +365,4 @@ jobs:
           DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
           DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
           DEFECTDOJO_ENGAGEMENT_ID: ${{ secrets.DEFECTDOJO_ENGAGEMENT_ID }}
+

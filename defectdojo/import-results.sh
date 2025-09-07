@@ -13,7 +13,7 @@ fi
 DEFECTDOJO_URL=$1
 API_KEY=$2
 ENGAGEMENT_ID=$3
-REPORTS_DIR="../reports"
+REPORTS_DIR="../docs/reports"
 
 # Verify DefectDojo is accessible
 echo "Checking DefectDojo accessibility..."
@@ -86,12 +86,12 @@ if [ -f "${REPORTS_DIR}/dependency-check-report-Angular-XSS-Frontend.sarif" ]; t
 fi
 
 # Import SBOM results
-if [ -f "../angular-xss-sbom.json" ]; then
+if [ -f "${REPORTS_DIR}/angular-xss-sbom.json" ]; then
     echo "Importing CycloneDX SBOM..."
     curl -X POST \
         -H "Authorization: Token ${API_KEY}" \
         -H "Content-Type: multipart/form-data" \
-        -F "file=@../angular-xss-sbom.json" \
+        -F "file=@${REPORTS_DIR}/angular-xss-sbom.json" \
         -F "scan_type=CycloneDX Scan" \
         -F "engagement=${ENGAGEMENT_ID}" \
         -F "close_old_findings=false" \
@@ -106,12 +106,12 @@ if [ -f "../angular-xss-sbom.json" ]; then
 fi
 
 # Import ZAP Baseline Scan Results
-if [ -f "./artifacts/zap-reports/baseline-report.md" ]; then
+if [ -f "${REPORTS_DIR}/baseline-report.md" ]; then
     echo "Importing ZAP Baseline Scan results..."
     curl -X POST \
         -H "Authorization: Token ${API_KEY}" \
         -H "Content-Type: multipart/form-data" \
-        -F "file=@./artifacts/zap-reports/baseline-report.md" \
+        -F "file=@${REPORTS_DIR}/baseline-report.md" \
         -F "scan_type=ZAP Scan" \
         -F "engagement=${ENGAGEMENT_ID}" \
         -F "close_old_findings=false" \
@@ -126,12 +126,12 @@ if [ -f "./artifacts/zap-reports/baseline-report.md" ]; then
 fi
 
 # Import ZAP Full Scan Results
-if [ -f "./artifacts/zap-reports/full-scan-report.md" ]; then
+if [ -f "${REPORTS_DIR}/full-scan-report.md" ]; then
     echo "Importing ZAP Full Scan results..."
     curl -X POST \
         -H "Authorization: Token ${API_KEY}" \
         -H "Content-Type: multipart/form-data" \
-        -F "file=@./artifacts/zap-reports/full-scan-report.md" \
+        -F "file=@${REPORTS_DIR}/full-scan-report.md" \
         -F "scan_type=ZAP Scan" \
         -F "engagement=${ENGAGEMENT_ID}" \
         -F "close_old_findings=false" \
@@ -142,6 +142,46 @@ if [ -f "./artifacts/zap-reports/full-scan-report.md" ]; then
         echo "Error importing ZAP Full Scan results"
     else
         echo "Successfully imported ZAP Full Scan results"
+    fi
+fi
+
+# Import CodeQL Results
+if [ -f "${REPORTS_DIR}/codeql-results.sarif" ]; then
+    echo "Importing CodeQL SAST results..."
+    curl -X POST \
+        -H "Authorization: Token ${API_KEY}" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@${REPORTS_DIR}/codeql-results.sarif" \
+        -F "scan_type=SARIF" \
+        -F "engagement=${ENGAGEMENT_ID}" \
+        -F "close_old_findings=true" \
+        -F "scan_date=$(date +"%Y-%m-%d")" \
+        "${DEFECTDOJO_URL}/api/v2/import-scan/"
+    
+    if [ $? -ne 0 ]; then
+        echo "Error importing CodeQL results"
+    else
+        echo "Successfully imported CodeQL results"
+    fi
+fi
+
+# Import TruffleHog Results
+if [ -f "${REPORTS_DIR}/trufflehog-results.json" ]; then
+    echo "Importing TruffleHog results..."
+    curl -X POST \
+        -H "Authorization: Token ${API_KEY}" \
+        -H "Content-Type: multipart/form-data" \
+        -F "file=@${REPORTS_DIR}/trufflehog-results.json" \
+        -F "scan_type=Trufflehog Scan" \
+        -F "engagement=${ENGAGEMENT_ID}" \
+        -F "close_old_findings=true" \
+        -F "scan_date=$(date +"%Y-%m-%d")" \
+        "${DEFECTDOJO_URL}/api/v2/import-scan/"
+    
+    if [ $? -ne 0 ]; then
+        echo "Error importing TruffleHog results"
+    else
+        echo "Successfully imported TruffleHog results"
     fi
 fi
 
