@@ -95,9 +95,46 @@ for sarif_file in "$REPORTS_DIR/codeql-results.sarif" "$REPORTS_DIR/dependency-c
   fi
 done
 
-# Import SBOM
+# Import SBOMs
+# Check for API SBOM
+if [ -f "$REPORTS_DIR/angular-xss-api-sbom.json" ] && [ -s "$REPORTS_DIR/angular-xss-api-sbom.json" ]; then
+  echo "Importing API SBOM report: $REPORTS_DIR/angular-xss-api-sbom.json"
+  IMPORT_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: Token $API_TOKEN" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@$REPORTS_DIR/angular-xss-api-sbom.json" \
+    -F "scan_type=CycloneDX" \
+    -F "engagement=$ENGAGEMENT_ID" \
+    -F "close_old_findings=false" \
+    -F "scan_date=$(date +"%Y-%m-%d")" \
+    "$DEFECTDOJO_URL/api/v2/import-scan/")
+  
+  echo "API SBOM Import response: $IMPORT_RESPONSE"
+else
+  echo "API SBOM file not found or empty: $REPORTS_DIR/angular-xss-api-sbom.json"
+fi
+
+# Check for Frontend SBOM
+if [ -f "$REPORTS_DIR/angular-xss-frontend-sbom.json" ] && [ -s "$REPORTS_DIR/angular-xss-frontend-sbom.json" ]; then
+  echo "Importing Frontend SBOM report: $REPORTS_DIR/angular-xss-frontend-sbom.json"
+  IMPORT_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: Token $API_TOKEN" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@$REPORTS_DIR/angular-xss-frontend-sbom.json" \
+    -F "scan_type=CycloneDX" \
+    -F "engagement=$ENGAGEMENT_ID" \
+    -F "close_old_findings=false" \
+    -F "scan_date=$(date +"%Y-%m-%d")" \
+    "$DEFECTDOJO_URL/api/v2/import-scan/")
+  
+  echo "Frontend SBOM Import response: $IMPORT_RESPONSE"
+else
+  echo "Frontend SBOM file not found or empty: $REPORTS_DIR/angular-xss-frontend-sbom.json"
+fi
+
+# Check for combined/old format SBOM as fallback
 if [ -f "$REPORTS_DIR/angular-xss-sbom.json" ] && [ -s "$REPORTS_DIR/angular-xss-sbom.json" ]; then
-  echo "Importing SBOM report: $REPORTS_DIR/angular-xss-sbom.json"
+  echo "Importing combined SBOM report: $REPORTS_DIR/angular-xss-sbom.json"
   IMPORT_RESPONSE=$(curl -s -X POST \
     -H "Authorization: Token $API_TOKEN" \
     -H "Content-Type: multipart/form-data" \
@@ -108,9 +145,7 @@ if [ -f "$REPORTS_DIR/angular-xss-sbom.json" ] && [ -s "$REPORTS_DIR/angular-xss
     -F "scan_date=$(date +"%Y-%m-%d")" \
     "$DEFECTDOJO_URL/api/v2/import-scan/")
   
-  echo "Import response: $IMPORT_RESPONSE"
-else
-  echo "SBOM file not found or empty: $REPORTS_DIR/angular-xss-sbom.json"
+  echo "Combined SBOM Import response: $IMPORT_RESPONSE"
 fi
 
 # Import ZAP report

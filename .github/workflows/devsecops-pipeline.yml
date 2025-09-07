@@ -186,20 +186,35 @@ jobs:
       # Create docs/reports directory if it doesn't exist
       - name: Ensure docs/reports directory exists
         run: mkdir -p ./docs/reports
-
-      - run: npm install
       
-      - name: Generate SBOM with CycloneDX
+      # Generate SBOM for Backend (API)
+      - name: Generate API SBOM with CycloneDX
         uses: CycloneDX/gh-node-module-generatebom@master
         with:
-          path: './xss'
-          output: './docs/reports/angular-xss-sbom.json'
+          path: './xss/api'
+          output: './docs/reports/angular-xss-api-sbom.json'
+      
+      # Generate SBOM for Frontend
+      - name: Generate Frontend SBOM with CycloneDX
+        uses: CycloneDX/gh-node-module-generatebom@master
+        with:
+          path: './xss/frontend'
+          output: './docs/reports/angular-xss-frontend-sbom.json'
+          
+      # Combine SBOMs or keep them separate for artifact upload
+      - name: Combine SBOMs
+        run: |
+          # Create a directory for all SBOM files
+          mkdir -p ./docs/reports/sbom
+          # Copy the generated SBOMs to this directory
+          cp ./docs/reports/angular-xss-api-sbom.json ./docs/reports/sbom/
+          cp ./docs/reports/angular-xss-frontend-sbom.json ./docs/reports/sbom/
           
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
           name: angular-xss-sbom
-          path: './docs/reports/angular-xss-sbom.json'
+          path: './docs/reports/sbom/'
 
   dast-scanning:
     name: Dynamic Application Security Testing

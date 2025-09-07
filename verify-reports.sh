@@ -21,7 +21,8 @@ declare -a EXPECTED_REPORTS=(
     "trufflehog-results.json"
     "codeql-results.sarif"
     "dependency-check-*.sarif"
-    "angular-xss-sbom.json"
+    "angular-xss-api-sbom.json"
+    "angular-xss-frontend-sbom.json"
     "report_json.json"
     "report_xml.xml"
     "report_html.html"
@@ -91,8 +92,8 @@ if [ "$MISSING_REPORTS" == "1" ]; then
         echo "Created placeholder for dependency-check-placeholder.sarif"
     fi
     
-    # SBOM
-    if [ ! -f "$REPORTS_DIR/angular-xss-sbom.json" ]; then
+    # API SBOM
+    if [ ! -f "$REPORTS_DIR/angular-xss-api-sbom.json" ]; then
         echo '{
           "bomFormat": "CycloneDX",
           "specVersion": "1.4",
@@ -104,11 +105,41 @@ if [ "$MISSING_REPORTS" == "1" ]; then
                 "name": "Placeholder",
                 "version": "1.0.0"
               }
-            ]
+            ],
+            "component": {
+              "type": "application",
+              "name": "Angular XSS API",
+              "version": "1.0.0"
+            }
           },
           "components": []
-        }' > "$REPORTS_DIR/angular-xss-sbom.json"
-        echo "Created placeholder for angular-xss-sbom.json"
+        }' > "$REPORTS_DIR/angular-xss-api-sbom.json"
+        echo "Created placeholder for angular-xss-api-sbom.json"
+    fi
+    
+    # Frontend SBOM
+    if [ ! -f "$REPORTS_DIR/angular-xss-frontend-sbom.json" ]; then
+        echo '{
+          "bomFormat": "CycloneDX",
+          "specVersion": "1.4",
+          "version": 1,
+          "metadata": {
+            "tools": [
+              {
+                "vendor": "CycloneDX",
+                "name": "Placeholder",
+                "version": "1.0.0"
+              }
+            ],
+            "component": {
+              "type": "application",
+              "name": "Angular XSS Frontend",
+              "version": "1.0.0"
+            }
+          },
+          "components": []
+        }' > "$REPORTS_DIR/angular-xss-frontend-sbom.json"
+        echo "Created placeholder for angular-xss-frontend-sbom.json"
     fi
     
     # ZAP Reports - JSON format

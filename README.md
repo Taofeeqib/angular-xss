@@ -72,11 +72,14 @@ All security scan results are stored in the `docs/reports` directory for easy ac
 - **TruffleHog Results** - `trufflehog-results.json`
 - **CodeQL SAST Results** - `codeql-results.sarif`
 - **OWASP Dependency-Check Results** - `dependency-check-*.sarif`
-- **CycloneDX SBOM** - `angular-xss-sbom.json`
+- **CycloneDX SBOM** - Separate SBOMs for both components:
+  - API: `angular-xss-api-sbom.json`
+  - Frontend: `angular-xss-frontend-sbom.json`
 - **ZAP DAST Reports** - Multiple formats available:
   - JSON format: `report_json.json`
   - Markdown format: `report_md.md`
-  - HTML format: `report_html.html` 
+  - HTML format: `report_html.html`
+  - XML format: `report_xml.xml` 
 
 
 To view SARIF files, you can use:
