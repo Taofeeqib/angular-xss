@@ -88,14 +88,39 @@ jobs:
           if [ -n "$(find ./docs/reports -type f -name '*.sarif')" ]; then
             # Create a consolidated sarif file for DefectDojo
             echo "Creating consolidated SARIF file for DefectDojo"
-            FIRST_FILE=$(find ./docs/reports -type f -name "*.sarif" | head -1)
-            cp "$FIRST_FILE" ./docs/reports/codeql-results.sarif
             
-            # Display info about the consolidated file
-            echo "Consolidated SARIF file created at ./docs/reports/codeql-results.sarif"
-            ls -la ./docs/reports/codeql-results.sarif
-            echo "First 20 lines of consolidated SARIF file:"
-            head -n 20 ./docs/reports/codeql-results.sarif
+            # Find the first SARIF file and make a copy for DefectDojo
+            FIRST_FILE=$(find ./docs/reports -type f -name "*.sarif" | head -1)
+            echo "Using file: $FIRST_FILE for consolidated results"
+            
+            # Make sure the file exists and is not a directory
+            if [ -f "$FIRST_FILE" ]; then
+              cp "$FIRST_FILE" ./docs/reports/codeql-results.sarif
+              
+              # Display info about the consolidated file
+              echo "Consolidated SARIF file created at ./docs/reports/codeql-results.sarif"
+              ls -la ./docs/reports/codeql-results.sarif
+              echo "First 20 lines of consolidated SARIF file:"
+              head -n 20 ./docs/reports/codeql-results.sarif
+            else
+              echo "Warning: Selected file is not a regular file. Creating placeholder instead."
+              echo '{
+                "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+                "version": "2.1.0",
+                "runs": [
+                  {
+                    "tool": {
+                      "driver": {
+                        "name": "CodeQL",
+                        "version": "placeholder",
+                        "rules": []
+                      }
+                    },
+                    "results": []
+                  }
+                ]
+              }' > ./docs/reports/codeql-results.sarif
+            fi
           else
             echo "No CodeQL SARIF files found, creating placeholder"
             echo '{
@@ -219,20 +244,68 @@ jobs:
       - name: Find SARIF files
         id: find-sarif
         run: |
-          SARIF_FILES=$(find ./docs/reports -name "*.sarif" | tr '\n' ',' | sed 's/,$//')
-          if [ -z "$SARIF_FILES" ]; then
-            echo "No SARIF files found, using placeholder"
-            SARIF_FILES="./docs/reports/dependency-check-placeholder.sarif"
+          # Find all SARIF files
+          echo "Finding SARIF files in ./docs/reports directory"
+          find ./docs/reports -name "*.sarif" -type f
+          
+          # Check if we have any SARIF files
+          SARIF_COUNT=$(find ./docs/reports -name "*.sarif" -type f | wc -l)
+          
+          if [ "$SARIF_COUNT" -eq 0 ]; then
+            echo "No SARIF files found, creating placeholder"
+            echo '{
+              "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+              "version": "2.1.0",
+              "runs": [
+                {
+                  "tool": {
+                    "driver": {
+                      "name": "OWASP Dependency-Check",
+                      "version": "placeholder",
+                      "rules": []
+                    }
+                  },
+                  "results": []
+                }
+              ]
+            }' > ./docs/reports/dependency-check-placeholder.sarif
+            
+            echo "primary_sarif=./docs/reports/dependency-check-placeholder.sarif" >> $GITHUB_OUTPUT
+          else
+            # Get the first SARIF file for primary upload
+            PRIMARY_SARIF=$(find ./docs/reports -name "*.sarif" -type f | head -1)
+            echo "Found primary SARIF file: $PRIMARY_SARIF"
+            echo "primary_sarif=$PRIMARY_SARIF" >> $GITHUB_OUTPUT
           fi
-          echo "sarif_files=$SARIF_FILES" >> $GITHUB_OUTPUT
-          echo "Found SARIF files: $SARIF_FILES"
 
-      - name: Upload SARIF files
+      # Upload primary SARIF file
+      - name: Upload primary SARIF file
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: ${{ steps.find-sarif.outputs.sarif_files }}
+          sarif_file: ${{ steps.find-sarif.outputs.primary_sarif }}
           category: dependency-check
+          
+      # Upload any additional SARIF files individually
+      - name: Upload additional SARIF files
+        run: |
+          # Skip the first file as it was already uploaded
+          COUNT=0
+          for sarif_file in $(find ./docs/reports -name "*.sarif" -type f); do
+            if [ $COUNT -gt 0 ]; then
+              echo "Uploading additional SARIF file: $sarif_file"
+              # Use the GitHub API to upload the SARIF file
+              UPLOAD_URL="https://api.github.com/repos/$GITHUB_REPOSITORY/code-scanning/sarifs"
+              curl -X POST \
+                -H "Authorization: Bearer ${{ github.token }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Content-Type: application/json" \
+                -d "{\"commit_sha\":\"$GITHUB_SHA\",\"ref\":\"$GITHUB_REF\",\"sarif\":\"$(base64 -w 0 $sarif_file)\",\"tool_name\":\"OWASP Dependency-Check (Additional)\"}" \
+                $UPLOAD_URL || echo "Failed to upload additional SARIF file: $sarif_file"
+            fi
+            COUNT=$((COUNT + 1))
+          done
+        continue-on-error: true
           
       # Copy SARIF to artifact directory for persistent storage
       - name: Upload SCA Results as Artifact
