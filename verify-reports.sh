@@ -23,6 +23,8 @@ declare -a EXPECTED_REPORTS=(
     "dependency-check-*.sarif"
     "angular-xss-api-sbom.json"
     "angular-xss-frontend-sbom.json"
+    "api-bom.xml"
+    "frontend-bom.xml"
     "report_json.json"
     "report_xml.xml"
     "report_html.html"

@@ -186,15 +186,21 @@ jobs:
       # Create docs/reports directory if it doesn't exist
       - name: Ensure docs/reports directory exists
         run: mkdir -p ./docs/reports
+        
+      # Generate SBOM using direct script
+      - name: Generate XML BOMs using script
+        run: |
+          chmod +x ./.github/workflows/scripts/bom_generate.sh
+          ./.github/workflows/scripts/bom_generate.sh
       
-      # Generate SBOM for Backend (API)
+      # Generate JSON SBOM for Backend (API)
       - name: Generate API SBOM with CycloneDX
         uses: CycloneDX/gh-node-module-generatebom@master
         with:
           path: './xss/api'
           output: './docs/reports/angular-xss-api-sbom.json'
       
-      # Generate SBOM for Frontend
+      # Generate JSON SBOM for Frontend
       - name: Generate Frontend SBOM with CycloneDX
         uses: CycloneDX/gh-node-module-generatebom@master
         with:
@@ -206,9 +212,12 @@ jobs:
         run: |
           # Create a directory for all SBOM files
           mkdir -p ./docs/reports/sbom
-          # Copy the generated SBOMs to this directory
+          # Copy the generated JSON SBOMs to this directory
           cp ./docs/reports/angular-xss-api-sbom.json ./docs/reports/sbom/
           cp ./docs/reports/angular-xss-frontend-sbom.json ./docs/reports/sbom/
+          # Copy the generated XML SBOMs to this directory if they exist
+          [ -f ./docs/reports/api-bom.xml ] && cp ./docs/reports/api-bom.xml ./docs/reports/sbom/
+          [ -f ./docs/reports/frontend-bom.xml ] && cp ./docs/reports/frontend-bom.xml ./docs/reports/sbom/
           
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4

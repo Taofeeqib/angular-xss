@@ -132,6 +132,42 @@ else
   echo "Frontend SBOM file not found or empty: $REPORTS_DIR/angular-xss-frontend-sbom.json"
 fi
 
+# Check for XML API SBOM
+if [ -f "$REPORTS_DIR/api-bom.xml" ] && [ -s "$REPORTS_DIR/api-bom.xml" ]; then
+  echo "Importing XML API SBOM report: $REPORTS_DIR/api-bom.xml"
+  IMPORT_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: Token $API_TOKEN" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@$REPORTS_DIR/api-bom.xml" \
+    -F "scan_type=CycloneDX" \
+    -F "engagement=$ENGAGEMENT_ID" \
+    -F "close_old_findings=false" \
+    -F "scan_date=$(date +"%Y-%m-%d")" \
+    "$DEFECTDOJO_URL/api/v2/import-scan/")
+  
+  echo "XML API SBOM Import response: $IMPORT_RESPONSE"
+else
+  echo "XML API SBOM file not found or empty: $REPORTS_DIR/api-bom.xml"
+fi
+
+# Check for XML Frontend SBOM
+if [ -f "$REPORTS_DIR/frontend-bom.xml" ] && [ -s "$REPORTS_DIR/frontend-bom.xml" ]; then
+  echo "Importing XML Frontend SBOM report: $REPORTS_DIR/frontend-bom.xml"
+  IMPORT_RESPONSE=$(curl -s -X POST \
+    -H "Authorization: Token $API_TOKEN" \
+    -H "Content-Type: multipart/form-data" \
+    -F "file=@$REPORTS_DIR/frontend-bom.xml" \
+    -F "scan_type=CycloneDX" \
+    -F "engagement=$ENGAGEMENT_ID" \
+    -F "close_old_findings=false" \
+    -F "scan_date=$(date +"%Y-%m-%d")" \
+    "$DEFECTDOJO_URL/api/v2/import-scan/")
+  
+  echo "XML Frontend SBOM Import response: $IMPORT_RESPONSE"
+else
+  echo "XML Frontend SBOM file not found or empty: $REPORTS_DIR/frontend-bom.xml"
+fi
+
 # Check for combined/old format SBOM as fallback
 if [ -f "$REPORTS_DIR/angular-xss-sbom.json" ] && [ -s "$REPORTS_DIR/angular-xss-sbom.json" ]; then
   echo "Importing combined SBOM report: $REPORTS_DIR/angular-xss-sbom.json"
