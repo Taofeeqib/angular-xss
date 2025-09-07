@@ -63,8 +63,26 @@ See the `docs/screenshots` directory for:
 - Identified XSS vulnerabilities
 - DefectDojo dashboard
 
+## Security Scan Reports
+
+All security scan results are stored in the `docs/reports` directory for easy access and review:
+
+- **TruffleHog Results** - `trufflehog-results.json`
+- **CodeQL SAST Results** - `codeql-results.sarif`
+- **OWASP Dependency-Check Results** - `dependency-check-*.sarif`
+- **CycloneDX SBOM** - `angular-xss-sbom.json`
+- **ZAP DAST Reports** - `zap-baseline-report.md` and `zap-full-scan-report.md`
+
+A comprehensive report index is available at `docs/reports/README.md`.
+
+To view SARIF files, you can use:
+- GitHub Security Code Scanning dashboard
+- [SARIF Viewer VSCode Extension](https://marketplace.visualstudio.com/items?itemName=MS-SarifVSCode.sarif-viewer)
+- [SARIF Web Viewer](https://microsoft.github.io/sarif-web-component/)
+
 ## Future Enhancements
 
 - Implement container scanning
 - Add automated security regression testing
 - Enhance Semgrep rules for custom vulnerabilities
+- Add GitHub Pages to host scan reports

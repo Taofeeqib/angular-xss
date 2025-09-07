@@ -404,10 +404,68 @@ jobs:
           echo "Checking for running containers:"
           docker ps
           
+  save-reports:
+    name: Save Scan Reports
+    runs-on: ubuntu-latest
+    needs: [secrets-scanning, sast-scanning, sca-scanning, sbom-generation, dast-scanning]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      
+      - name: Ensure reports directory exists
+        run: mkdir -p ./docs/reports
+          
+      - name: Save all scan reports to docs/reports
+        run: |
+          # Create comprehensive report index file
+          echo "# DevSecOps Scan Reports" > ./docs/reports/README.md
+          echo "Generated on $(date)" >> ./docs/reports/README.md
+          echo "" >> ./docs/reports/README.md
+          echo "## Available Reports" >> ./docs/reports/README.md
+          
+          # Process all artifacts and copy to docs/reports
+          for artifact_dir in ./artifacts/*; do
+            if [ -d "$artifact_dir" ]; then
+              artifact_name=$(basename "$artifact_dir")
+              echo "Processing artifact: $artifact_name"
+              
+              # Copy all files from the artifact directory to docs/reports
+              cp -v $artifact_dir/* ./docs/reports/ 2>/dev/null || echo "No files to copy from $artifact_name"
+              
+              # Add entry to the report index
+              echo "- **$artifact_name**" >> ./docs/reports/README.md
+              for file in $artifact_dir/*; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file")
+                  echo "  - [$filename](./$filename)" >> ./docs/reports/README.md
+                fi
+              done
+            fi
+          done
+          
+          # Check if any reports were saved
+          echo "Saved reports in docs/reports directory:"
+          ls -la ./docs/reports/
+          
+      # Option to commit the reports directly to the repository
+      - name: Create local commit with reports (optional)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ./docs/reports/
+          git commit -m "Add scan reports [skip ci]" || echo "No changes to commit"
+          echo "Reports committed to the repository. Use git push to push these changes."
+
   defectdojo-import:
     name: Import Results to DefectDojo
     runs-on: ubuntu-latest
-    needs: [secrets-scanning, sast-scanning, sca-scanning, sbom-generation, dast-scanning]
+    needs: [save-reports]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -422,12 +480,54 @@ jobs:
         run: |
           mkdir -p ./docs/reports
           
-          # Try to copy any existing reports from artifacts
-          find ./artifacts -type f -name "*.sarif" -o -name "*.json" -o -name "*.md" | while read file; do
-            cp "$file" ./docs/reports/
-          done
+          echo "Copying all artifacts to docs/reports directory..."
           
-          # List all files in docs/reports for verification
-          echo "Files in docs/reports directory:"
+          # TruffleHog results
+          if [ -d "./artifacts/trufflehog-results" ]; then
+            echo "Found TruffleHog results"
+            cp ./artifacts/trufflehog-results/* ./docs/reports/ || echo "No TruffleHog files to copy"
+          else
+            echo "No TruffleHog results directory found"
+          fi
+          
+          # CodeQL results
+          if [ -d "./artifacts/codeql-results" ]; then
+            echo "Found CodeQL results"
+            cp ./artifacts/codeql-results/* ./docs/reports/ || echo "No CodeQL files to copy"
+          else
+            echo "No CodeQL results directory found"
+          fi
+          
+          # SCA results
+          if [ -d "./artifacts/sca-results" ]; then
+            echo "Found SCA results"
+            cp ./artifacts/sca-results/* ./docs/reports/ || echo "No SCA files to copy"
+          else
+            echo "No SCA results directory found"
+          fi
+          
+          # SBOM results
+          if [ -d "./artifacts/angular-xss-sbom" ]; then
+            echo "Found SBOM results"
+            cp ./artifacts/angular-xss-sbom/* ./docs/reports/ || echo "No SBOM files to copy"
+          else
+            echo "No SBOM results directory found"
+          fi
+          
+          # ZAP results
+          if [ -d "./artifacts/zap-reports" ]; then
+            echo "Found ZAP results"
+            cp ./artifacts/zap-reports/* ./docs/reports/ || echo "No ZAP files to copy"
+          else
+            echo "No ZAP results directory found"
+          fi
+          
+          # Verify copied files
+          echo "Files in docs/reports directory after copying artifacts:"
           ls -la ./docs/reports/
+          
+          # Run verification script to check for required reports
+          echo "Running verification script..."
+          chmod +x ./verify-reports.sh
+          ./verify-reports.sh
           
