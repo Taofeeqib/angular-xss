@@ -38,3 +38,12 @@ Markdown files (.md) can be viewed with any Markdown viewer or GitHub's web inte
 
 ## DefectDojo Integration
 These reports are automatically imported into DefectDojo for centralized vulnerability management.
+- **zap-reports**
+  - [README.md](./README.md)
+  - [angular-xss-sbom.json](./angular-xss-sbom.json)
+  - [codeql-results.sarif](./codeql-results.sarif)
+  - [dependency-check-report.sarif](./dependency-check-report.sarif)
+  - [report_md.md](./report_md.md)
+  - [trufflehog-results.json](./trufflehog-results.json)
+  - [zap-baseline-report.md](./zap-baseline-report.md)
+  - [zap-full-scan-report.md](./zap-full-scan-report.md)
