@@ -28,10 +28,15 @@ jobs:
         run: mkdir -p ./docs/reports
 
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.63.7
+        uses: trufflesecurity/trufflehog@main
         with:
-          path: ./
-          extra_args: --debug --json   
+          extra_args: --debug --json
+          
+      # Generate TruffleHog report in docs/reports
+      - name: Generate TruffleHog report
+        run: |
+          echo "Running TruffleHog scan manually to save report"
+          docker run --rm -v $(pwd):/pwd trufflesecurity/trufflehog:latest github --repo file:///pwd --json > ./docs/reports/trufflehog-results.json || true
           
       # Upload TruffleHog results as artifact
       - name: Upload TruffleHog results
